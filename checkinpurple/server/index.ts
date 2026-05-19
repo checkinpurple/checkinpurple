@@ -38,6 +38,7 @@ import {
   getPaymentMethods,
   createPaymentMethod,
 } from "./routes/subscriptions";
+import { manualClaim, createPayPalOrder, capturePayPalOrder } from "./routes/payments";
 import { getMyProfiles, addProfile, switchActiveProfile } from "./routes/profiles";
 import {
   upsertArtistProfile,
@@ -174,6 +175,11 @@ export function createServer() {
   app.post("/api/coins/purchase", purchaseCoins);
   app.post("/api/coins/tip", tipArtist);
   app.get("/api/coins/tips", getUserTips);
+
+  // Payments
+  app.post("/api/payments/manual-claim", manualClaim);
+  app.post("/api/payments/paypal/create-order", createPayPalOrder);
+  app.post("/api/payments/paypal/capture", capturePayPalOrder);
 
   // Scheduled releases routes
   app.get("/api/releases", getScheduledReleases);

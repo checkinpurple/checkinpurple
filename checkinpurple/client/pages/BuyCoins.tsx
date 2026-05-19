@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Radio, Coins, Check, ArrowLeft, CreditCard, Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { ADMIN_EMAIL } from "@/lib/config";
 
 type Currency = "ZAR" | "USD";
 
@@ -69,6 +70,11 @@ export default function BuyCoins() {
   };
 
   const selectedPack = COIN_PACKS.find(p => p.id === selected);
+  const [manualAmount, setManualAmount] = useState<string>("");
+  const [manualTx, setManualTx] = useState<string>("");
+  const [claiming, setClaiming] = useState(false);
+  const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -231,6 +237,46 @@ export default function BuyCoins() {
           <p className="text-center text-xs text-muted-foreground mt-4">
             Payments are processed securely. Coins are non-refundable once purchased.
           </p>
+ 
+          {/* Temporary PayPal.me CTA + manual claim */}
+          <div className="mt-8 glass rounded-2xl p-6">
+            <h3 className="font-bold mb-2">PayPal (temporary)</h3>
+            <p className="text-sm text-muted-foreground mb-4">If you prefer PayPal, click the link below to pay via PayPal.me. Afterwards, submit the transaction ID below to request manual crediting by admin.</p>
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <a href="https://paypal.me/csign" target="_blank" rel="noreferrer" className="px-4 py-3 bg-yellow-500 rounded-lg text-black font-bold text-center hover:opacity-90">Pay with PayPal</a>
+              <a href="https://paypal.me/csign/10" target="_blank" rel="noreferrer" className="px-4 py-3 border rounded-lg text-sm flex items-center justify-center">Quick pay (amount)</a>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+              <input value={manualAmount} onChange={e => setManualAmount(e.target.value)} placeholder="Amount paid (e.g. 50)" className="w-full bg-input text-foreground rounded-lg px-3 py-2 text-sm" />
+              <input value={manualTx} onChange={e => setManualTx(e.target.value)} placeholder="PayPal transaction ID" className="w-full bg-input text-foreground rounded-lg px-3 py-2 text-sm" />
+              <div />
+            </div>
+            {claimError && <p className="text-destructive text-sm mb-2">{claimError}</p>}
+            {claimSuccess && <p className="text-green-600 text-sm mb-2">{claimSuccess}</p>}
+            <div className="flex gap-2">
+              <button onClick={async () => {
+                if (!manualAmount || !manualTx || !user) { setClaimError('Please enter amount and transaction id'); return; }
+                setClaimError(null);
+                setClaiming(true);
+                try {
+                  const res = await fetch('/api/payments/manual-claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
+                    body: JSON.stringify({ amount: manualAmount, txId: manualTx })
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || 'Failed to submit claim');
+                  setClaimSuccess('Claim submitted. Admin will reconcile shortly.');
+                  setManualAmount(''); setManualTx('');
+                } catch (err) {
+                  setClaimError(err instanceof Error ? err.message : 'Failed to submit claim');
+                } finally { setClaiming(false); }
+              }} disabled={claiming} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">Submit claim</button>
+              <button onClick={() => { setManualAmount(''); setManualTx(''); setClaimError(null); setClaimSuccess(null); }} className="px-4 py-2 border rounded-lg">Clear</button>
+              <div className="ml-auto text-sm text-muted-foreground">Need help? Email <a href={`mailto:${ADMIN_EMAIL}`} className="text-primary hover:underline">{ADMIN_EMAIL}</a></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
