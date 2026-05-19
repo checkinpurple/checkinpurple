@@ -170,7 +170,7 @@ export default function InfluencerPage() {
                 <h3 className="font-bold">Social Media Activity</h3>
                 <p className="text-sm text-muted-foreground">Track your audience performance and share your influencer links across every platform.</p>
               </div>
-              <div className="text-sm text-muted-foreground">Need help? Email <a href="mailto:checkinpurple@gmail.com" className="text-primary hover:underline">checkinpurple@gmail.com</a>.</div>
+              <div className="text-sm text-muted-foreground">Need help? Email <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">{contactEmail}</a>.</div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {influencerSocialLinks.map(link => (
@@ -213,7 +213,7 @@ export default function InfluencerPage() {
                 <h3 className="font-bold">Artist Reel Preview</h3>
                 <p className="text-sm text-muted-foreground">Preview the latest artist tracks with reels, play samples, and recommend your favorites.</p>
               </div>
-              <div className="text-sm text-muted-foreground">Contact admin: <a href="mailto:checkinpurple@gmail.com" className="text-primary hover:underline">checkinpurple@gmail.com</a></div>
+              <div className="text-sm text-muted-foreground">Contact admin: <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">{contactEmail}</a></div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {previewTracks.map(track => (
