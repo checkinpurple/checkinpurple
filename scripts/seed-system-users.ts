@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-const seedPassword = process.env.SEED_PASSWORD || "Admin1234!";
+const seedPassword = process.env.SEED_PASSWORD || "checkin.ill";
 
 type SeedUser = {
   email: string;
@@ -21,10 +21,10 @@ type SeedUser = {
 };
 
 const USERS: SeedUser[] = [
-  { email: "adminartist@checkinpurple.com", username: "adminartist", role: "artist" },
-  { email: "adminfan@checkinpurple.com", username: "adminfan", role: "fan" },
-  { email: "adminmerchant@checkinpurple.com", username: "adminmerchant", role: "merchant" },
-  { email: "admininfluencer@checkinpurple.com", username: "admininfluencer", role: "influencer" },
+  { email: "checkinpurple-Fan@gmail.com", username: "checkinpurple-Fan", role: "fan" },
+  { email: "checkinpurple-Artist@gmail.com", username: "checkinpurple-Artist", role: "artist" },
+  { email: "checkinpurple-Merchant@gmail.com", username: "checkinpurple-Merchant", role: "merchant" },
+  { email: "checkinpurple-Influencer@gmail.com", username: "checkinpurple-Influencer", role: "influencer" },
 ];
 
 async function ensureUser(u: SeedUser) {

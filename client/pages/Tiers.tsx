@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Radio, Check, ArrowLeft, Zap, Crown } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { SubscriptionTier } from "@shared/api";
@@ -7,6 +7,8 @@ import { SubscriptionTier } from "@shared/api";
 export default function Tiers() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedTier = searchParams.get("selected");
   const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
   const [currentTierId, setCurrentTierId] = useState<string | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
@@ -108,6 +110,11 @@ export default function Tiers() {
             </div>
             <h1 className="text-4xl font-bold mb-3">Choose Your Plan</h1>
             <p className="text-muted-foreground text-lg">Basic is limited. Upgrade to Standard or Premium to unlock more profiles.</p>
+            {selectedTier && (
+              <div className="mt-6 inline-flex items-center rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary">
+                Your selected plan is <span className="font-semibold ml-1">{selectedTier}</span>. Complete payment now to activate your multi-profile account.
+              </div>
+            )}
           </div>
 
           {error && (
@@ -118,7 +125,7 @@ export default function Tiers() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {tiers.map(tier => {
-              const highlight = tier.name === "Standard";
+              const highlight = tier.name === "Standard" || tier.name === selectedTier;
               const badge = tier.name === "Standard" ? "Most Popular" : tier.name === "Premium" ? "All Profiles" : undefined;
               const features = getFeatures(tier);
               return (

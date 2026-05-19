@@ -119,10 +119,15 @@ export default function SignUp() {
       return;
     }
 
+    const paymentRequired = profiles.length >= 2;
     try {
       setLoading(true);
       await signUp(formData.email, formData.password, formData.username, activeProfile, profiles, tier);
-      navigate("/dashboard");
+      if (paymentRequired) {
+        navigate(`/tiers?selected=${tier}`);
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : authError || "Sign up failed";
       if (msg.includes("already registered") || msg.includes("identities")) {

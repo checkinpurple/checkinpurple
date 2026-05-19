@@ -5,8 +5,9 @@ export const createLivepeerStreamKey: RequestHandler = async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const apiKey = process.env.LIVEPEER_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "LIVEPEER_API_KEY is not configured" });
+    const importMetaEnv = typeof import.meta !== "undefined" ? (import.meta as any).env : undefined;
+    const apiKey = importMetaEnv?.VITE_LIVEPEER_API_KEY || process.env.VITE_LIVEPEER_API_KEY || process.env.LIVEPEER_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "LIVEPEER_API_KEY or VITE_LIVEPEER_API_KEY is not configured" });
 
     const name = (req.body?.name as string | undefined) || `checkinpurple_${userId}_${Date.now()}`;
 

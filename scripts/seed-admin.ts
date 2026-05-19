@@ -5,9 +5,9 @@ dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const adminEmail = process.env.ADMIN_EMAIL || 'admin@soundsync.test';
-const adminPassword = process.env.ADMIN_PASSWORD || 'Admin1234!';
-const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+const adminEmail = process.env.ADMIN_EMAIL || 'checkinpurple@gmail.com';
+const adminPassword = process.env.ADMIN_PASSWORD || 'checkin.ill';
+const adminUsername = process.env.ADMIN_USERNAME || 'checkinpurple';
 const adminRole = 'admin';
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
