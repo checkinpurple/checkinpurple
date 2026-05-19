@@ -254,6 +254,10 @@ export default function Admin() {
                 <p className="text-muted-foreground text-sm">{user.email} · CheckinPurple Platform</p>
               </div>
             </div>
+            <div className="rounded-3xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
+              Admin access includes all protected pages: fan, artist, merchant, influencer, and admin dashboards.
+              Use this panel to manage users, roles, submissions, payouts, and live content.
+            </div>
             <div className="flex flex-wrap gap-3 justify-start sm:justify-end">
               <span className="px-3 py-2 rounded-2xl bg-primary/10 text-primary text-xs font-semibold">Admin Mode</span>
               <span className="px-3 py-2 rounded-2xl bg-emerald-500/10 text-emerald-500 text-xs font-semibold">{stats.totalUsers} users</span>

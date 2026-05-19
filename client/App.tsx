@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "./lib/auth-context";
 import Index from "./pages/Index";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
+import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Broadcast from "./pages/Broadcast";
 import Listen from "./pages/Listen";
@@ -90,6 +91,7 @@ export default function App() {
               <Route path="/" element={<Index />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/signin" element={<SignIn />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/store" element={<Store />} />
               <Route path="/parties" element={<ListeningParties />} />
               <Route path="/artist/:username" element={<ArtistProfile />} />

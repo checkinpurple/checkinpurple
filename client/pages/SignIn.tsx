@@ -125,6 +125,12 @@ export default function SignIn() {
             </button>
           </form>
 
+          <div className="mt-4 text-right text-sm">
+            <Link to="/forgot-password" className="text-primary font-medium hover:underline">
+              Forgot password?
+            </Link>
+          </div>
+
           {/* Clear separation — this is sign in only, create account is separate */}
           <div className="mt-8 pt-6 border-t border-border/40 text-center">
             <p className="text-muted-foreground text-sm mb-3">Don't have an account yet?</p>
