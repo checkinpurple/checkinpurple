@@ -325,7 +325,7 @@ export default function Dashboard() {
           </div>
 
           {/* Upgrade banner */}
-          {availableProfiles.length === 1 && (
+          {availableProfiles.length === 1 && !isAdmin && (
             <div className="p-4 rounded-2xl border border-dashed border-primary/30 bg-primary/5 flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-3">
                 <Zap className="w-7 h-7 text-primary flex-shrink-0" />

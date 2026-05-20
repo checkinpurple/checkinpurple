@@ -44,6 +44,24 @@ function getNavLinks(
       label: "Dashboard",
       section: "Admin"
     });
+    links.push({
+      to: "/fan",
+      icon: <Users className="w-4 h-4" />,
+      label: "Fan Dashboard",
+      section: "Admin"
+    });
+    links.push({
+      to: "/influencer",
+      icon: <TrendingUp className="w-4 h-4" />,
+      label: "Influencer Hub",
+      section: "Admin"
+    });
+    links.push({
+      to: "/merchant",
+      icon: <ShoppingBag className="w-4 h-4" />,
+      label: "Merchant Store",
+      section: "Admin"
+    });
   } else {
     // Non-admin users get Dashboard as home
     links.push({ 
@@ -68,16 +86,16 @@ function getNavLinks(
   }
 
   // Influencer-specific hub
-  if (has("influencer") && !isAdmin) {
+  if (has("influencer") || isAdmin) {
     links.push(
-      { to: "/influencer", icon: <TrendingUp className="w-4 h-4" />, label: "Influencer Hub", section: "Influencer" },
+      { to: "/influencer", icon: <TrendingUp className="w-4 h-4" />, label: "Influencer Hub", section: isAdmin ? "Admin" : "Influencer" },
     );
   }
 
   // Merchant-specific store management
-  if (has("merchant") && !isAdmin) {
+  if (has("merchant") || isAdmin) {
     links.push(
-      { to: "/merchant", icon: <ShoppingBag className="w-4 h-4" />, label: "My Store", section: "Merchant" },
+      { to: "/merchant", icon: <ShoppingBag className="w-4 h-4" />, label: "My Store", section: isAdmin ? "Admin" : "Merchant" },
     );
   }
 

@@ -5,7 +5,7 @@ import {
   Search, Ban, CheckCircle, XCircle, LogOut,
   RefreshCw, TrendingUp, AlertTriangle, Eye, ArrowLeftCircle,
   Music, Calendar, Play, UserCheck, BarChart2,
-  Activity, DollarSign, Headphones
+  Activity, DollarSign, Headphones, ShoppingBag
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import Logo from "@/components/Logo";
@@ -293,6 +293,30 @@ export default function Admin() {
               <span className="px-3 py-2 rounded-2xl bg-emerald-500/10 text-emerald-500 text-xs font-semibold">{stats.totalUsers} users</span>
               <span className="px-3 py-2 rounded-2xl bg-yellow-500/10 text-yellow-500 text-xs font-semibold">{stats.pendingSubmissions} pending songs</span>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+            <Link to="/fan" className="group p-4 rounded-3xl border border-border/40 bg-card/30 hover:border-primary/40 hover:bg-primary/5 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <p className="font-semibold">Fan Dashboard</p>
+              <p className="text-xs text-muted-foreground">View the platform as a fan.</p>
+            </Link>
+            <Link to="/influencer" className="group p-4 rounded-3xl border border-border/40 bg-card/30 hover:border-pink-500/40 hover:bg-pink-500/5 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center mb-3">
+                <TrendingUp className="w-5 h-5 text-pink-400" />
+              </div>
+              <p className="font-semibold">Influencer Hub</p>
+              <p className="text-xs text-muted-foreground">Open the influencer dashboard.</p>
+            </Link>
+            <Link to="/merchant" className="group p-4 rounded-3xl border border-border/40 bg-card/30 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-3">
+                <ShoppingBag className="w-5 h-5 text-orange-400" />
+              </div>
+              <p className="font-semibold">Merchant Store</p>
+              <p className="text-xs text-muted-foreground">Open the merchant dashboard.</p>
+            </Link>
           </div>
 
           {/* Tabs */}
