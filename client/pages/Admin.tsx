@@ -71,9 +71,14 @@ export default function Admin() {
   const loadUsers = async () => {
     try {
       const d = await fetchJSON("/api/admin/users");
-      setUsers(d.users || []);
-      setStats(s => ({ ...s, totalUsers: d.users?.length || 0 }));
-    } catch { setUsers([{ id: user?.id, email: user?.email, username: user?.username, role: "admin", created_at: new Date().toISOString() }]); }
+      const userList = Array.isArray(d?.users) ? d.users : [];
+      setUsers(userList);
+      setStats(s => ({ ...s, totalUsers: userList.length }));
+    } catch (err) {
+      console.error("Failed to load users:", err);
+      setUsers([]);
+      setStats(s => ({ ...s, totalUsers: 0 }));
+    }
   };
 
   const loadStreams = async () => {

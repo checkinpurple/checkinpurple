@@ -172,6 +172,15 @@ export default function AppSidebar({ pendingBookings = 0 }: SidebarProps) {
     admin: "bg-red-500/20 text-red-400",
   };
 
+  const PROFILE_LABELS: Record<string, string> = {
+    fan: "Listener",
+    artist: "Artist",
+    influencer: "Influencer",
+    merchant: "Merchant",
+    artist_fan: "Artist + Fan",
+    admin: "Admin",
+  };
+
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
@@ -180,6 +189,12 @@ export default function AppSidebar({ pendingBookings = 0 }: SidebarProps) {
           <Radio className="w-4 h-4 text-primary-foreground" />
         </div>
         <Logo />
+      </div>
+      <div className="px-4 py-4 border-b border-border/40">
+        <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground mb-2">Account type</p>
+        <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${PROFILE_COLORS[activeProfile] || "bg-card text-muted-foreground"}`}>
+          {PROFILE_LABELS[activeProfile] || activeProfile}
+        </span>
       </div>
 
       {/* Profile Switcher */}
