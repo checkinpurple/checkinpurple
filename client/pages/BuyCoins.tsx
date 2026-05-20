@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Radio, Coins, Check, ArrowLeft, CreditCard, Zap } from "lucide-react";
+import { Radio, Coins, Check, ArrowLeft, Zap, ExternalLink } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import AppSidebar from "@/components/AppSidebar";
 import { ADMIN_EMAIL } from "@/lib/config";
 
 type Currency = "ZAR" | "USD";
@@ -30,73 +31,57 @@ export default function BuyCoins() {
   const navigate = useNavigate();
   const [currency, setCurrency] = useState<Currency>("ZAR");
   const [selected, setSelected] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
-
-  const handlePurchase = async () => {
-    if (!selected || !user) return;
-    const pack = COIN_PACKS.find(p => p.id === selected);
-    if (!pack) return;
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const response = await fetch("/api/coins/purchase", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user.id}`,
-        },
-        body: JSON.stringify({
-          packageId: pack.id,
-          amount: currency === "ZAR" ? pack.zar : pack.usd,
-          currency,
-          coins: pack.coins + (pack.bonus || 0),
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Purchase failed");
-
-      setSuccess(true);
-      setTimeout(() => navigate("/dashboard"), 2500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Purchase failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const selectedPack = COIN_PACKS.find(p => p.id === selected);
   const [manualAmount, setManualAmount] = useState<string>("");
   const [manualTx, setManualTx] = useState<string>("");
   const [claiming, setClaiming] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <nav className="fixed top-0 w-full z-40 border-b border-border/40 glass">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Radio className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CheckinPurple
-            </span>
-          </Link>
-          <Link to="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
-            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-          </Link>
-        </div>
-      </nav>
+  const selectedPack = COIN_PACKS.find(p => p.id === selected);
+  
+  // Generate PayPal.me link with selected amount
+  const getPayPalLink = () => {
+    if (!selectedPack) return "https://paypal.me/csign";
+    const amount = currency === "ZAR" ? selectedPack.zar : selectedPack.usd;
+    return `https://paypal.me/csign/${amount}`;
+  };
 
-      <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
+  const handlePayPalPurchase = () => {
+    if (!selectedPack) return;
+    window.open(getPayPalLink(), "_blank", "noopener,noreferrer");
+  };
+
+  const handleClaimSubmit = async () => {
+    if (!manualAmount || !manualTx || !user) { 
+      setClaimError('Please enter amount and transaction ID'); 
+      return; 
+    }
+    setClaimError(null);
+    setClaiming(true);
+    try {
+      const res = await fetch('/api/payments/manual-claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
+        body: JSON.stringify({ amount: manualAmount, txId: manualTx, packageId: selected })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to submit claim');
+      setClaimSuccess('Claim submitted! Admin will credit your coins within 24 hours.');
+      setManualAmount(''); 
+      setManualTx('');
+    } catch (err) {
+      setClaimError(err instanceof Error ? err.message : 'Failed to submit claim');
+    } finally { 
+      setClaiming(false); 
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex">
+      <AppSidebar />
+
+      <main className="flex-1 lg:ml-56 pt-16 lg:pt-0">
+        <div className="px-4 py-6 max-w-3xl mx-auto">
 
           {/* Hero */}
           <div className="text-center mb-10">
@@ -192,93 +177,104 @@ export default function BuyCoins() {
             </h3>
             <div className="grid sm:grid-cols-3 gap-4 text-sm text-muted-foreground">
               <div className="flex items-start gap-2">
-                <span className="text-yellow-500 mt-0.5">🎵</span>
+                <span className="text-yellow-500 mt-0.5">*</span>
                 <span>Tip artists during live streams to show support</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-yellow-500 mt-0.5">💬</span>
+                <span className="text-yellow-500 mt-0.5">*</span>
                 <span>Send highlighted messages in live chat</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-yellow-500 mt-0.5">⭐</span>
+                <span className="text-yellow-500 mt-0.5">*</span>
                 <span>70% of every coin goes directly to the artist</span>
               </div>
             </div>
           </div>
 
-          {/* Purchase button */}
-          {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive/50 rounded-lg text-destructive text-sm mb-4">
-              {error}
-            </div>
-          )}
-
-          {success ? (
-            <div className="p-6 bg-green-500/10 border border-green-500/30 rounded-2xl text-center">
-              <Check className="w-10 h-10 text-green-500 mx-auto mb-2" />
-              <p className="font-bold text-green-500 text-lg">Purchase successful!</p>
-              <p className="text-muted-foreground text-sm">Coins added to your account. Redirecting...</p>
-            </div>
-          ) : (
-            <button
-              onClick={handlePurchase}
-              disabled={!selected || loading}
-              className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold text-lg rounded-2xl hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-3"
-            >
-              <CreditCard className="w-5 h-5" />
-              {loading
-                ? "Processing..."
-                : selectedPack
-                ? `Buy ${(selectedPack.coins + (selectedPack.bonus || 0)).toLocaleString()} coins for ${currency === "ZAR" ? `R${selectedPack.zar}` : `$${selectedPack.usd}`}`
-                : "Select a pack to continue"}
-            </button>
-          )}
-
-          <p className="text-center text-xs text-muted-foreground mt-4">
-            Payments are processed securely. Coins are non-refundable once purchased.
-          </p>
- 
-          {/* Temporary PayPal.me CTA + manual claim */}
-          <div className="mt-8 glass rounded-2xl p-6">
-            <h3 className="font-bold mb-2">PayPal (temporary)</h3>
-            <p className="text-sm text-muted-foreground mb-4">If you prefer PayPal, click the link below to pay via PayPal.me. Afterwards, submit the transaction ID below to request manual crediting by admin.</p>
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <a href="https://paypal.me/csign" target="_blank" rel="noreferrer" className="px-4 py-3 bg-yellow-500 rounded-lg text-black font-bold text-center hover:opacity-90">Pay with PayPal</a>
-              <a href="https://paypal.me/csign/10" target="_blank" rel="noreferrer" className="px-4 py-3 border rounded-lg text-sm flex items-center justify-center">Quick pay (amount)</a>
+          {/* PayPal Purchase Section */}
+          <div className="glass rounded-2xl p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <span className="text-2xl font-bold text-blue-500">P</span>
+              </div>
+              <div>
+                <h3 className="font-bold">Pay with PayPal</h3>
+                <p className="text-xs text-muted-foreground">Secure payment via PayPal.me</p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-              <input value={manualAmount} onChange={e => setManualAmount(e.target.value)} placeholder="Amount paid (e.g. 50)" className="w-full bg-input text-foreground rounded-lg px-3 py-2 text-sm" />
-              <input value={manualTx} onChange={e => setManualTx(e.target.value)} placeholder="PayPal transaction ID" className="w-full bg-input text-foreground rounded-lg px-3 py-2 text-sm" />
-              <div />
-            </div>
-            {claimError && <p className="text-destructive text-sm mb-2">{claimError}</p>}
-            {claimSuccess && <p className="text-green-600 text-sm mb-2">{claimSuccess}</p>}
-            <div className="flex gap-2">
-              <button onClick={async () => {
-                if (!manualAmount || !manualTx || !user) { setClaimError('Please enter amount and transaction id'); return; }
-                setClaimError(null);
-                setClaiming(true);
-                try {
-                  const res = await fetch('/api/payments/manual-claim', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
-                    body: JSON.stringify({ amount: manualAmount, txId: manualTx })
-                  });
-                  const data = await res.json();
-                  if (!res.ok) throw new Error(data.error || 'Failed to submit claim');
-                  setClaimSuccess('Claim submitted. Admin will reconcile shortly.');
-                  setManualAmount(''); setManualTx('');
-                } catch (err) {
-                  setClaimError(err instanceof Error ? err.message : 'Failed to submit claim');
-                } finally { setClaiming(false); }
-              }} disabled={claiming} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">Submit claim</button>
-              <button onClick={() => { setManualAmount(''); setManualTx(''); setClaimError(null); setClaimSuccess(null); }} className="px-4 py-2 border rounded-lg">Clear</button>
-              <div className="ml-auto text-sm text-muted-foreground">Need help? Email <a href={`mailto:${ADMIN_EMAIL}`} className="text-primary hover:underline">{ADMIN_EMAIL}</a></div>
+            <div className="space-y-4">
+              {/* Step 1: Pay */}
+              <div className="p-4 bg-card/30 rounded-xl border border-border/40">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">1</span>
+                  <span className="font-semibold text-sm">Click to pay via PayPal</span>
+                </div>
+                <button
+                  onClick={handlePayPalPurchase}
+                  disabled={!selected}
+                  className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  {selectedPack
+                    ? `Pay ${currency === "ZAR" ? `R${selectedPack.zar}` : `$${selectedPack.usd}`} via PayPal`
+                    : "Select a pack first"}
+                </button>
+              </div>
+
+              {/* Step 2: Submit claim */}
+              <div className="p-4 bg-card/30 rounded-xl border border-border/40">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</span>
+                  <span className="font-semibold text-sm">Submit your transaction details</span>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <input 
+                    value={manualAmount} 
+                    onChange={e => setManualAmount(e.target.value)} 
+                    placeholder="Amount paid (e.g. 50)" 
+                    className="w-full bg-input text-foreground rounded-lg px-3 py-2.5 text-sm border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50" 
+                  />
+                  <input 
+                    value={manualTx} 
+                    onChange={e => setManualTx(e.target.value)} 
+                    placeholder="PayPal transaction ID" 
+                    className="w-full bg-input text-foreground rounded-lg px-3 py-2.5 text-sm border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50" 
+                  />
+                </div>
+                
+                {claimError && <p className="text-destructive text-sm mb-2">{claimError}</p>}
+                {claimSuccess && <p className="text-green-500 text-sm mb-2">{claimSuccess}</p>}
+                
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleClaimSubmit} 
+                    disabled={claiming || !manualAmount || !manualTx} 
+                    className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  >
+                    {claiming ? "Submitting..." : "Submit Claim"}
+                  </button>
+                  <button 
+                    onClick={() => { setManualAmount(''); setManualTx(''); setClaimError(null); setClaimSuccess(null); }} 
+                    className="px-4 py-2.5 border border-border/40 rounded-xl text-sm hover:bg-card/50 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Admin will credit your coins within 24 hours of payment verification. Need help? Email <a href={`mailto:${ADMIN_EMAIL}`} className="text-primary hover:underline">{ADMIN_EMAIL}</a>
+              </p>
             </div>
           </div>
+
+          <p className="text-center text-xs text-muted-foreground">
+            Payments are processed securely via PayPal. Coins are non-refundable once purchased.
+          </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

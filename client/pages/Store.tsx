@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Radio, ShoppingBag, Package, Download, Ticket, Search, Filter, ArrowLeft, ShoppingCart, X, Check } from "lucide-react";
+import { Radio, ShoppingBag, Package, Download, Ticket, Search, Filter, ShoppingCart, X, Check, ExternalLink } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import AppSidebar from "@/components/AppSidebar";
+import { ADMIN_EMAIL } from "@/lib/config";
 
 type Category = "all" | "merch" | "digital" | "ticket";
 
@@ -34,7 +36,11 @@ export default function Store() {
   const [category, setCategory] = useState<Category>("all");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
-  const [checkingOut, setCheckingOut] = useState(false);
+  const [showPayPalCheckout, setShowPayPalCheckout] = useState(false);
+  const [orderTx, setOrderTx] = useState("");
+  const [claiming, setClaiming] = useState(false);
+  const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
+  const [claimError, setClaimError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [shippingAddress, setShippingAddress] = useState("");
 
@@ -65,28 +71,61 @@ export default function Store() {
   const cartTotal = cart.reduce((s, i) => s + i.product.price_zar * i.quantity, 0);
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
 
-  const checkout = async () => {
-    if (!user) { navigate("/signin"); return; }
-    if (cart.some(i => i.product.category === "merch") && !shippingAddress.trim()) return;
+  const getPayPalLink = () => {
+    return `https://paypal.me/csign/${cartTotal.toFixed(0)}`;
+  };
 
-    setCheckingOut(true);
+  const handlePayPalCheckout = () => {
+    window.open(getPayPalLink(), "_blank", "noopener,noreferrer");
+  };
+
+  const handleClaimOrder = async () => {
+    if (!user) { navigate("/signin"); return; }
+    if (!orderTx) { setClaimError("Please enter the PayPal transaction ID"); return; }
+    if (cart.some(i => i.product.category === "merch") && !shippingAddress.trim()) {
+      setClaimError("Please enter a shipping address for physical items");
+      return;
+    }
+
+    setClaiming(true);
+    setClaimError(null);
+
     try {
-      for (const item of cart) {
-        await fetch("/api/store/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
-          body: JSON.stringify({
-            productId: item.product.id,
-            quantity: item.quantity,
-            shippingAddress: item.product.category === "merch" ? shippingAddress : undefined,
-          }),
-        });
-      }
+      const res = await fetch("/api/payments/manual-claim", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${user.id}` 
+        },
+        body: JSON.stringify({
+          type: "store_order",
+          items: cart.map(i => ({
+            productId: i.product.id,
+            productTitle: i.product.title,
+            quantity: i.quantity,
+            price: i.product.price_zar,
+          })),
+          total: cartTotal,
+          txId: orderTx,
+          shippingAddress: cart.some(i => i.product.category === "merch") ? shippingAddress : undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit order claim");
+
       setCart([]);
       setOrderSuccess(true);
+      setShowPayPalCheckout(false);
       setShowCart(false);
-      setTimeout(() => setOrderSuccess(false), 4000);
-    } catch { } finally { setCheckingOut(false); }
+      setOrderTx("");
+      setShippingAddress("");
+      setTimeout(() => setOrderSuccess(false), 5000);
+    } catch (err) {
+      setClaimError(err instanceof Error ? err.message : "Failed to submit order claim");
+    } finally {
+      setClaiming(false);
+    }
   };
 
   const filtered = products.filter(p => {
@@ -102,114 +141,11 @@ export default function Store() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="fixed top-0 w-full z-40 border-b border-border/40 glass">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Radio className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">CheckinPurple</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            {user && (
-              <Link to="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm">
-                <ArrowLeft className="w-4 h-4" />Dashboard
-              </Link>
-            )}
-            <button
-              onClick={() => setShowCart(true)}
-              className="relative flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 text-primary rounded-xl text-sm font-semibold hover:bg-primary/20 transition-colors"
-            >
-              <ShoppingCart className="w-4 h-4" />
-              Cart
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-bold">
-                  {cartCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background flex">
+      <AppSidebar />
 
-      {/* Cart sidebar */}
-      {showCart && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setShowCart(false)} />
-          <div className="w-full max-w-sm bg-background border-l border-border/40 flex flex-col">
-            <div className="p-5 border-b border-border/40 flex items-center justify-between">
-              <h2 className="font-bold text-lg">Cart ({cartCount})</h2>
-              <button onClick={() => setShowCart(false)} className="text-muted-foreground hover:text-foreground">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {cart.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground">
-                  <ShoppingCart className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p>Your cart is empty</p>
-                </div>
-              ) : (
-                cart.map(item => (
-                  <div key={item.product.id} className="flex items-center gap-3 p-3 bg-card/30 rounded-xl border border-border/20">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      {getCategoryIcon(item.product.category)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{item.product.title}</p>
-                      <p className="text-xs text-muted-foreground">@{item.product.merchant_username}</p>
-                      <p className="text-sm font-bold text-primary">R{(item.product.price_zar * item.quantity).toFixed(2)}</p>
-                    </div>
-                    <button onClick={() => removeFromCart(item.product.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {cart.length > 0 && (
-              <div className="p-4 border-t border-border/40 space-y-3">
-                {cart.some(i => i.product.category === "merch") && (
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Shipping Address *</label>
-                    <textarea
-                      value={shippingAddress}
-                      onChange={e => setShippingAddress(e.target.value)}
-                      placeholder="Street, City, Province, Code"
-                      rows={2}
-                      className="w-full bg-input text-foreground rounded-lg px-3 py-2 border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm resize-none"
-                    />
-                  </div>
-                )}
-                <div className="flex items-center justify-between font-bold">
-                  <span>Total</span>
-                  <span className="text-primary">R{cartTotal.toFixed(2)}</span>
-                </div>
-                <button
-                  onClick={checkout}
-                  disabled={checkingOut || (cart.some(i => i.product.category === "merch") && !shippingAddress.trim())}
-                  className="w-full py-3 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity"
-                >
-                  {checkingOut ? "Processing..." : user ? "Place Order" : "Sign in to Order"}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Success banner */}
-      {orderSuccess && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 bg-green-500/90 text-white rounded-full font-semibold shadow-lg">
-          <Check className="w-5 h-5" />Order placed successfully!
-        </div>
-      )}
-
-      <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+      <main className="flex-1 lg:ml-56 pt-16 lg:pt-0">
+        <div className="px-4 py-6 max-w-7xl mx-auto">
 
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-2">CheckinPurple Store</h1>
@@ -280,8 +216,185 @@ export default function Store() {
               ))}
             </div>
           )}
+
+          {/* Cart Button - Fixed Position */}
+          <button
+            onClick={() => setShowCart(true)}
+            className="fixed bottom-6 right-6 flex items-center gap-2 px-5 py-3 bg-primary text-primary-foreground rounded-full text-sm font-semibold shadow-lg hover:opacity-90 transition-all z-30"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Cart
+            {cartCount > 0 && (
+              <span className="ml-1 w-5 h-5 rounded-full bg-white text-primary text-xs flex items-center justify-center font-bold">
+                {cartCount}
+              </span>
+            )}
+          </button>
         </div>
-      </div>
+      </main>
+
+      {/* Cart sidebar */}
+      {showCart && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setShowCart(false)} />
+          <div className="w-full max-w-sm bg-background border-l border-border/40 flex flex-col">
+            <div className="p-5 border-b border-border/40 flex items-center justify-between">
+              <h2 className="font-bold text-lg">Cart ({cartCount})</h2>
+              <button onClick={() => setShowCart(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {cart.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  <ShoppingCart className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>Your cart is empty</p>
+                </div>
+              ) : (
+                cart.map(item => (
+                  <div key={item.product.id} className="flex items-center gap-3 p-3 bg-card/30 rounded-xl border border-border/20">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      {getCategoryIcon(item.product.category)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">{item.product.title}</p>
+                      <p className="text-xs text-muted-foreground">@{item.product.merchant_username}</p>
+                      <p className="text-sm font-bold text-primary">R{(item.product.price_zar * item.quantity).toFixed(2)}</p>
+                    </div>
+                    <button onClick={() => removeFromCart(item.product.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {cart.length > 0 && (
+              <div className="p-4 border-t border-border/40 space-y-3">
+                <div className="flex items-center justify-between font-bold">
+                  <span>Total</span>
+                  <span className="text-primary">R{cartTotal.toFixed(2)}</span>
+                </div>
+                <button
+                  onClick={() => { setShowPayPalCheckout(true); setShowCart(false); }}
+                  className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Checkout via PayPal
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* PayPal Checkout Modal */}
+      {showPayPalCheckout && cart.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowPayPalCheckout(false)}>
+          <div className="bg-card rounded-2xl p-6 max-w-md w-full border border-border/40" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <span className="text-2xl font-bold text-blue-500">P</span>
+              </div>
+              <div>
+                <h3 className="font-bold">Pay with PayPal</h3>
+                <p className="text-xs text-muted-foreground">Complete your order</p>
+              </div>
+            </div>
+
+            {/* Order Summary */}
+            <div className="p-4 bg-card/50 rounded-xl border border-border/40 mb-4 max-h-40 overflow-y-auto">
+              {cart.map(item => (
+                <div key={item.product.id} className="flex items-center justify-between text-sm py-1">
+                  <span className="truncate mr-2">{item.product.title} x{item.quantity}</span>
+                  <span className="font-semibold">R{(item.product.price_zar * item.quantity).toFixed(0)}</span>
+                </div>
+              ))}
+              <div className="border-t border-border/40 mt-2 pt-2 flex items-center justify-between font-bold">
+                <span>Total</span>
+                <span className="text-primary">R{cartTotal.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Shipping Address if needed */}
+            {cart.some(i => i.product.category === "merch") && (
+              <div className="mb-4">
+                <label className="text-xs text-muted-foreground mb-1 block">Shipping Address (required for physical items)</label>
+                <textarea
+                  value={shippingAddress}
+                  onChange={e => setShippingAddress(e.target.value)}
+                  placeholder="Street, City, Province, Postal Code"
+                  rows={2}
+                  className="w-full bg-input text-foreground rounded-lg px-3 py-2 border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm resize-none"
+                />
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* Step 1: Pay */}
+              <div className="p-4 bg-card/30 rounded-xl border border-border/40">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">1</span>
+                  <span className="font-semibold text-sm">Click to pay via PayPal</span>
+                </div>
+                <button
+                  onClick={handlePayPalCheckout}
+                  className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Pay R{cartTotal.toFixed(0)} via PayPal
+                </button>
+              </div>
+
+              {/* Step 2: Submit claim */}
+              <div className="p-4 bg-card/30 rounded-xl border border-border/40">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</span>
+                  <span className="font-semibold text-sm">Submit transaction ID</span>
+                </div>
+                
+                <input 
+                  value={orderTx} 
+                  onChange={e => setOrderTx(e.target.value)} 
+                  placeholder="PayPal transaction ID" 
+                  className="w-full bg-input text-foreground rounded-lg px-3 py-2.5 text-sm border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50 mb-3" 
+                />
+                
+                {claimError && <p className="text-destructive text-sm mb-2">{claimError}</p>}
+                {claimSuccess && <p className="text-green-500 text-sm mb-2">{claimSuccess}</p>}
+                
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleClaimOrder} 
+                    disabled={claiming || !orderTx} 
+                    className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  >
+                    {claiming ? "Submitting..." : "Submit Order"}
+                  </button>
+                  <button 
+                    onClick={() => setShowPayPalCheckout(false)} 
+                    className="px-4 py-2.5 border border-border/40 rounded-xl text-sm hover:bg-card/50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Orders processed within 24 hours. Need help? Email <a href={`mailto:${ADMIN_EMAIL}`} className="text-primary hover:underline">{ADMIN_EMAIL}</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success banner */}
+      {orderSuccess && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 bg-green-500/90 text-white rounded-full font-semibold shadow-lg">
+          <Check className="w-5 h-5" />Order submitted successfully!
+        </div>
+      )}
     </div>
   );
 }

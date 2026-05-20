@@ -3,24 +3,27 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Radio, Users, Coins, Wifi, CreditCard, Shield,
   Search, Ban, CheckCircle, XCircle, LogOut,
-  RefreshCw, TrendingUp, AlertTriangle, ArrowLeft,
+  RefreshCw, TrendingUp, AlertTriangle, Eye, ArrowLeftCircle,
   Music, Calendar, Play, UserCheck, BarChart2,
   Activity, DollarSign, Headphones
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import Logo from "@/components/Logo";
+import AppSidebar from "@/components/AppSidebar";
+import Notifications from "@/components/Notifications";
 
 const ADMIN_EMAIL = "checkinpurple@gmail.com";
 type Tab = "overview" | "users" | "submissions" | "parties" | "streams" | "transactions" | "payouts" | "moderation";
 
 export default function Admin() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, impersonateUser, stopImpersonating, isImpersonating, impersonatedUser } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("overview");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [impersonating, setImpersonating] = useState<string | null>(null);
 
   const [users, setUsers] = useState<any[]>([]);
   const [streams, setStreams] = useState<any[]>([]);
@@ -202,6 +205,23 @@ export default function Admin() {
   const handleLogout = async () => { await signOut(); navigate("/"); };
   const fmt = (d: string) => d ? new Date(d).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
+  const handleImpersonate = async (userId: string) => {
+    setImpersonating(userId);
+    try {
+      await impersonateUser(userId);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("[v0] Impersonation failed:", err);
+    } finally {
+      setImpersonating(null);
+    }
+  };
+
+  const handleStopImpersonating = () => {
+    stopImpersonating();
+    // Stay on admin page
+  };
+
   const TABS: { id: Tab; label: string; badge?: number }[] = [
     { id: "overview", label: "Overview" },
     { id: "submissions", label: "Submissions", badge: stats.pendingSubmissions },
@@ -216,42 +236,52 @@ export default function Admin() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <nav className="fixed top-0 w-full z-40 border-b border-border/40 glass">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Logo compact />
+    <div className="min-h-screen bg-background flex">
+      <AppSidebar />
+
+      <main className="flex-1 lg:ml-56 pt-16 lg:pt-0">
+        {/* Impersonation Banner */}
+        {isImpersonating && impersonatedUser && (
+          <div className="bg-amber-500 text-black px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <Eye className="w-4 h-4" />
+              Viewing as: @{impersonatedUser.username} ({impersonatedUser.email})
             </div>
-            <Logo className="text-sm sm:text-base" />
-          </Link>
+            <button 
+              onClick={handleStopImpersonating}
+              className="flex items-center gap-1 px-3 py-1 bg-black/20 hover:bg-black/30 rounded-lg text-sm font-semibold transition-colors"
+            >
+              <ArrowLeftCircle className="w-4 h-4" />
+              Return to Admin
+            </button>
+          </div>
+        )}
+
+        {/* Top bar (desktop) */}
+        <div className="hidden lg:flex items-center justify-between px-6 py-4 border-b border-border/40">
+          <div>
+            <h1 className="font-bold text-lg">Admin Control Panel</h1>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
+          </div>
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-bold tracking-wider">ADMIN</span>
             <button onClick={refresh} disabled={refreshing} className="p-2 text-muted-foreground hover:text-foreground disabled:opacity-50">
               <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
             </button>
-            <Link to="/dashboard" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="w-4 h-4" />Dashboard
-            </Link>
-            <button onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-              <LogOut className="w-4 h-4" />
-            </button>
+            <Notifications />
           </div>
         </div>
-      </nav>
 
-      <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="px-4 py-5 max-w-7xl mx-auto">
 
           <div className="mb-6 grid gap-4 sm:grid-cols-[auto_1fr] items-center">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Logo compact />
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
+                <Shield className="w-8 h-8 text-white" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold mb-1">Admin Control Panel</h1>
-                <p className="text-muted-foreground text-sm">{user.email} · CheckinPurple Platform</p>
+                <p className="text-muted-foreground text-sm">{user.email} - CheckinPurple Platform</p>
               </div>
             </div>
             <div className="rounded-3xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
@@ -259,7 +289,7 @@ export default function Admin() {
               Use this panel to manage users, roles, submissions, payouts, and live content.
             </div>
             <div className="flex flex-wrap gap-3 justify-start sm:justify-end">
-              <span className="px-3 py-2 rounded-2xl bg-primary/10 text-primary text-xs font-semibold">Admin Mode</span>
+              <span className="px-3 py-2 rounded-2xl bg-red-500/10 text-red-500 text-xs font-semibold">Admin Mode</span>
               <span className="px-3 py-2 rounded-2xl bg-emerald-500/10 text-emerald-500 text-xs font-semibold">{stats.totalUsers} users</span>
               <span className="px-3 py-2 rounded-2xl bg-yellow-500/10 text-yellow-500 text-xs font-semibold">{stats.pendingSubmissions} pending songs</span>
             </div>
@@ -525,9 +555,19 @@ export default function Admin() {
                               <td className="px-5 py-3 text-muted-foreground text-xs">{fmt(u.created_at)}</td>
                               <td className="px-5 py-3">
                                 {u.email !== ADMIN_EMAIL && (
-                                  <button onClick={() => toggleBan(u)} disabled={actionLoading === u.id} className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${u.is_banned ? "bg-green-500/10 text-green-500 hover:bg-green-500/20" : "bg-red-500/10 text-red-500 hover:bg-red-500/20"}`}>
-                                    {u.is_banned ? <><UserCheck className="w-3 h-3" />Unban</> : <><Ban className="w-3 h-3" />Ban</>}
-                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <button 
+                                      onClick={() => handleImpersonate(u.id)} 
+                                      disabled={impersonating === u.id} 
+                                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-500/10 text-blue-500 rounded-lg text-xs font-semibold hover:bg-blue-500/20 transition-colors"
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                      {impersonating === u.id ? "Loading..." : "View As"}
+                                    </button>
+                                    <button onClick={() => toggleBan(u)} disabled={actionLoading === u.id} className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${u.is_banned ? "bg-green-500/10 text-green-500 hover:bg-green-500/20" : "bg-red-500/10 text-red-500 hover:bg-red-500/20"}`}>
+                                      {u.is_banned ? <><UserCheck className="w-3 h-3" />Unban</> : <><Ban className="w-3 h-3" />Ban</>}
+                                    </button>
+                                  </div>
                                 )}
                               </td>
                             </tr>
@@ -671,7 +711,7 @@ export default function Admin() {
             </>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

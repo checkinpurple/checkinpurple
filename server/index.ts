@@ -53,6 +53,14 @@ import {
 import { createLivepeerStreamKey } from "./routes/livepeer";
 import { listUsers, updateUserRole, setUserBanned, listSubmissions } from "./routes/admin";
 import { listParties } from "./routes/parties";
+import {
+  getStoreSettings,
+  updateStoreSettings,
+  getMerchantProducts,
+  getPublicProducts,
+  createProduct,
+  getMerchantOrders,
+} from "./routes/store";
 
 declare global {
   namespace Express {
@@ -159,6 +167,14 @@ export function createServer() {
 
   // Parties
   app.get("/api/parties", listParties);
+
+  // Store (Merchant)
+  app.get("/api/store/settings", getStoreSettings);
+  app.post("/api/store/settings", updateStoreSettings);
+  app.get("/api/store/products", getMerchantProducts);
+  app.get("/api/store/products/public", getPublicProducts);
+  app.post("/api/store/products", createProduct);
+  app.get("/api/store/orders", getMerchantOrders);
 
   // Subscription routes
   app.get("/api/subscriptions/tiers", getSubscriptionTiers);

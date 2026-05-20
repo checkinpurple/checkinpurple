@@ -241,6 +241,17 @@ export default function Dashboard() {
               </Link>
             )}
 
+            {/* Non-artists can view their sent booking requests */}
+            {!isArtist && (
+              <Link to="/bookings" className="group p-4 rounded-2xl border border-border/40 bg-card/30 hover:border-yellow-500/40 hover:bg-yellow-500/5 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/30 to-orange-500/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                  <Zap className="w-5 h-5 text-yellow-500" />
+                </div>
+                <p className="font-bold text-sm mb-0.5">My Requests</p>
+                <p className="text-xs text-muted-foreground">Track artist bookings</p>
+              </Link>
+            )}
+
             {isInfluencer && (
               <Link to="/influencer" className="group p-4 rounded-2xl border border-border/40 bg-card/30 hover:border-pink-500/40 hover:bg-pink-500/5 transition-all">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/30 to-purple-500/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">

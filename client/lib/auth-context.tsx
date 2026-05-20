@@ -6,6 +6,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
+  impersonatedUser: User | null;
+  isImpersonating: boolean;
   signUp: (
     email: string,
     password: string,
@@ -17,14 +19,21 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   switchProfile: (profileType: ProfileType) => Promise<void>;
+  impersonateUser: (userId: string) => Promise<void>;
+  stopImpersonating: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [impersonatedUser, setImpersonatedUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const ADMIN_EMAIL = "checkinpurple@gmail.com";
+  const isAdmin = user?.email === ADMIN_EMAIL || user?.role === "admin";
+  const isImpersonating = impersonatedUser !== null;
 
   useEffect(() => {
     let isMounted = true;
@@ -210,8 +219,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const impersonateUser = async (userId: string) => {
+    if (!isAdmin) throw new Error('Only admins can impersonate users');
+    
+    try {
+      // Fetch the user profile to impersonate
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (profileError || !profile) {
+        throw new Error('User not found');
+      }
+
+      // Fetch their profiles
+      const { data: profileRows } = await supabase
+        .from('user_profiles')
+        .select('profile_type')
+        .eq('user_id', userId);
+
+      const profiles = profileRows?.map((row: any) => row.profile_type as ProfileType) || [profile.role || 'fan'];
+
+      setImpersonatedUser({
+        ...profile,
+        profiles,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to impersonate user';
+      throw new Error(message);
+    }
+  };
+
+  const stopImpersonating = () => {
+    setImpersonatedUser(null);
+  };
+
+  // Return the impersonated user if impersonating, otherwise the actual user
+  const effectiveUser = impersonatedUser || user;
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, signUp, signIn, signOut, switchProfile }}>
+    <AuthContext.Provider value={{ 
+      user: effectiveUser, 
+      loading, 
+      error, 
+      impersonatedUser,
+      isImpersonating,
+      signUp, 
+      signIn, 
+      signOut, 
+      switchProfile,
+      impersonateUser,
+      stopImpersonating 
+    }}>
       {children}
     </AuthContext.Provider>
   );

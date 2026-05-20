@@ -4,7 +4,7 @@ import {
   Radio, LayoutDashboard, Mic, Music, ShoppingBag, Star,
   Users, Wallet, Settings, LogOut, Menu, X, Bell,
   Coins, BookOpen, Calendar, TrendingUp, Camera, Store,
-  Headphones, Crown
+  Headphones, Crown, Send, MapPin, ShieldAlert
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import type { ProfileType } from "@shared/api";
@@ -15,45 +15,91 @@ interface SidebarLink {
   icon: React.ReactNode;
   label: string;
   badge?: number;
+  section?: string;
 }
 
-function getNavLinks(profiles: ProfileType[], activeProfile: ProfileType): SidebarLink[] {
-  const links: SidebarLink[] = [
-    { to: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" />, label: "Dashboard" },
-  ];
+const ADMIN_EMAIL = "checkinpurple@gmail.com";
 
+function getNavLinks(
+  profiles: ProfileType[], 
+  activeProfile: ProfileType, 
+  isAdmin: boolean,
+  pendingBookings: number
+): SidebarLink[] {
+  const links: SidebarLink[] = [];
   const has = (p: ProfileType) => profiles.includes(p);
+  const isArtist = isAdmin || has("artist");
 
-  if (has("fan") || activeProfile === "fan") {
-    links.push({ to: "/listen", icon: <Headphones className="w-4 h-4" />, label: "Listen Live" });
+  // Admin gets Admin Panel as home
+  if (isAdmin) {
+    links.push({ 
+      to: "/admin", 
+      icon: <ShieldAlert className="w-4 h-4" />, 
+      label: "Admin Panel",
+      section: "Admin"
+    });
+    links.push({ 
+      to: "/dashboard", 
+      icon: <LayoutDashboard className="w-4 h-4" />, 
+      label: "Dashboard",
+      section: "Admin"
+    });
+  } else {
+    // Non-admin users get Dashboard as home
+    links.push({ 
+      to: "/dashboard", 
+      icon: <LayoutDashboard className="w-4 h-4" />, 
+      label: "Dashboard",
+      section: "Home"
+    });
   }
-  if (has("artist") || activeProfile === "artist") {
+
+  // Artist-only features (not available to fan/influencer/merchant)
+  if (isArtist) {
     links.push(
-      { to: "/broadcast", icon: <Mic className="w-4 h-4" />, label: "Go Live" },
-      { to: "/releases", icon: <Music className="w-4 h-4" />, label: "Releases" },
-      { to: "/artist-settings", icon: <Settings className="w-4 h-4" />, label: "Artist Profile" },
-      { to: "/gigs/new", icon: <Calendar className="w-4 h-4" />, label: "Post Gig" },
-      { to: "/wallet", icon: <Wallet className="w-4 h-4" />, label: "Wallet" },
-    );
-  }
-  if (has("influencer") || activeProfile === "influencer") {
-    links.push(
-      { to: "/influencer", icon: <TrendingUp className="w-4 h-4" />, label: "Influencer Hub" },
-      { to: "/listen", icon: <Headphones className="w-4 h-4" />, label: "Discover Music" },
-    );
-  }
-  if (has("merchant") || activeProfile === "merchant") {
-    links.push(
-      { to: "/merchant", icon: <ShoppingBag className="w-4 h-4" />, label: "My Store" },
-      { to: "/listen", icon: <Headphones className="w-4 h-4" />, label: "Discover Music" },
+      { to: "/broadcast", icon: <Mic className="w-4 h-4" />, label: "Go Live", section: "Artist Tools" },
+      { to: "/releases", icon: <Music className="w-4 h-4" />, label: "Releases", section: "Artist Tools" },
+      { to: "/submit-music", icon: <Send className="w-4 h-4" />, label: "Submit Music", section: "Artist Tools" },
+      { to: "/gigs/new", icon: <MapPin className="w-4 h-4" />, label: "Post Gig", section: "Artist Tools" },
+      { to: "/artist-settings", icon: <Settings className="w-4 h-4" />, label: "Artist Profile", section: "Artist Tools" },
+      { to: "/wallet", icon: <Wallet className="w-4 h-4" />, label: "Wallet", section: "Artist Tools" },
+      { to: "/bookings", icon: <BookOpen className="w-4 h-4" />, label: "Bookings", badge: pendingBookings > 0 ? pendingBookings : undefined, section: "Artist Tools" },
     );
   }
 
-  // Store available to all
-  links.push({ to: "/store", icon: <Store className="w-4 h-4" />, label: "Store" });
-  links.push({ to: "/parties", icon: <Users className="w-4 h-4" />, label: "Listening Parties" });
-  links.push({ to: "/buy-coins", icon: <Coins className="w-4 h-4" />, label: "Buy Coins" });
-  links.push({ to: "/bookings", icon: <BookOpen className="w-4 h-4" />, label: "Bookings" });
+  // Influencer-specific hub
+  if (has("influencer") && !isAdmin) {
+    links.push(
+      { to: "/influencer", icon: <TrendingUp className="w-4 h-4" />, label: "Influencer Hub", section: "Influencer" },
+    );
+  }
+
+  // Merchant-specific store management
+  if (has("merchant") && !isAdmin) {
+    links.push(
+      { to: "/merchant", icon: <ShoppingBag className="w-4 h-4" />, label: "My Store", section: "Merchant" },
+    );
+  }
+
+  // Discovery features - available to ALL profiles
+  links.push(
+    { to: "/listen", icon: <Headphones className="w-4 h-4" />, label: "Discover Music", section: "Discover" },
+    { to: "/parties", icon: <Users className="w-4 h-4" />, label: "Listening Parties", section: "Discover" },
+    { to: "/store", icon: <Store className="w-4 h-4" />, label: "Store", section: "Discover" },
+  );
+
+  // Non-artists can see their sent booking requests
+  if (!isArtist) {
+    links.push(
+      { to: "/bookings", icon: <BookOpen className="w-4 h-4" />, label: "My Requests", section: "Discover" },
+    );
+  }
+
+  // Coins & account - available to all
+  links.push(
+    { to: "/buy-coins", icon: <Coins className="w-4 h-4" />, label: "Buy Coins", section: "Account" },
+    { to: "/tiers", icon: <Crown className="w-4 h-4" />, label: "Plans", section: "Account" },
+  );
 
   // Deduplicate by path
   return links.filter((l, i, arr) => arr.findIndex(x => x.to === l.to) === i);
@@ -80,7 +126,16 @@ export default function AppSidebar({ pendingBookings = 0 }: SidebarProps) {
     ? (user.role as ProfileType)
     : availableProfiles[0];
 
-  const navLinks = getNavLinks(availableProfiles, activeProfile);
+  const isAdmin = user.role === "admin" || user.email === ADMIN_EMAIL;
+  const navLinks = getNavLinks(availableProfiles, activeProfile, isAdmin, pendingBookings);
+  
+  // Group links by section
+  const groupedLinks = navLinks.reduce((acc, link) => {
+    const section = link.section || "Other";
+    if (!acc[section]) acc[section] = [];
+    acc[section].push(link);
+    return acc;
+  }, {} as Record<string, SidebarLink[]>);
 
   const handleSwitch = async (p: ProfileType) => {
     if (p === activeProfile) return;
@@ -132,46 +187,41 @@ export default function AppSidebar({ pendingBookings = 0 }: SidebarProps) {
         </div>
       )}
 
-      {/* Nav Links */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-        {navLinks.map(link => {
-          const active = location.pathname === link.to;
-          return (
-            <Link
-              key={link.to}
-              to={link.to}
-              onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                active
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-              }`}
-            >
-              {link.icon}
-              <span className="flex-1">{link.label}</span>
-              {link.label === "Bookings" && pendingBookings > 0 && (
-                <span className="text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-                  {pendingBookings}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-
-        {(user.role === "admin" || user.email === "checkinpurple@gmail.com") && (
-          <Link
-            to="/admin"
-            onClick={() => setOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              location.pathname === "/admin"
-                ? "bg-red-500/10 text-red-400"
-                : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-            }`}
-          >
-            <Crown className="w-4 h-4" />
-            Admin Panel
-          </Link>
-        )}
+      {/* Nav Links - Grouped by Section */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+        {Object.entries(groupedLinks).map(([section, links]) => (
+          <div key={section}>
+            <p className="text-[10px] text-muted-foreground/60 px-3 mb-1.5 font-semibold uppercase tracking-wider">{section}</p>
+            <div className="space-y-0.5">
+              {links.map(link => {
+                const active = location.pathname === link.to;
+                const isAdminLink = link.to === "/admin";
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      active
+                        ? isAdminLink 
+                          ? "bg-red-500/10 text-red-400"
+                          : "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                    }`}
+                  >
+                    {link.icon}
+                    <span className="flex-1">{link.label}</span>
+                    {link.badge && link.badge > 0 && (
+                      <span className="text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                        {link.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* User Footer */}

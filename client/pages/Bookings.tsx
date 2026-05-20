@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Radio, Calendar, MapPin, Clock, Coins, Check,
-  X, MessageSquare, ArrowLeft, ChevronDown, ChevronUp,
+  X, MessageSquare, ChevronDown, ChevronUp,
   Zap, Send, DollarSign, AlertCircle, CheckCircle
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import AppSidebar from "@/components/AppSidebar";
+import Notifications from "@/components/Notifications";
 
 type BookingStatus = "pending" | "accepted" | "declined" | "negotiating" | "confirmed" | "cancelled";
 
@@ -59,7 +61,8 @@ export default function Bookings() {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"incoming" | "sent">("incoming");
+  const isArtist = user?.role === "artist" || user?.role === "artist_fan" || user?.role === "admin";
+  const [tab, setTab] = useState<"incoming" | "sent">(isArtist ? "incoming" : "sent");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
   const [counterFeeZar, setCounterFeeZar] = useState("");
@@ -67,8 +70,6 @@ export default function Bookings() {
   const [responding, setResponding] = useState<string | null>(null);
   const [chatMessage, setChatMessage] = useState("");
   const [sendingChat, setSendingChat] = useState(false);
-
-  const isArtist = user?.role === "artist" || user?.role === "artist_fan" || user?.role === "admin";
 
   useEffect(() => {
     if (!user) { navigate("/signin"); return; }
@@ -145,30 +146,24 @@ export default function Bookings() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="fixed top-0 w-full z-40 border-b border-border/40 glass">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Radio className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">CheckinPurple</span>
-          </Link>
-          <Link to="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm">
-            <ArrowLeft className="w-4 h-4" />Dashboard
-          </Link>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background flex">
+      <AppSidebar pendingBookings={incomingBookings.filter(b => b.status === "pending").length} />
 
-      <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto space-y-5">
-
+      <main className="flex-1 lg:ml-56 pt-16 lg:pt-0">
+        {/* Top bar (desktop) */}
+        <div className="hidden lg:flex items-center justify-between px-6 py-4 border-b border-border/40">
           <div>
-            <h1 className="text-3xl font-bold mb-1">Bookings</h1>
-            <p className="text-muted-foreground">Manage booking requests between fans and artists</p>
+            <h1 className="font-bold text-lg">{isArtist ? "Bookings" : "My Booking Requests"}</h1>
+            <p className="text-xs text-muted-foreground">
+              {isArtist ? "Manage booking requests" : "Track your sent requests to artists"}
+            </p>
           </div>
+          <Notifications />
+        </div>
 
-          {/* Tabs */}
+        <div className="px-4 py-5 max-w-3xl mx-auto space-y-5">
+
+          {/* Tabs - only show both tabs for artists */}
           <div className="flex gap-2">
             {isArtist && (
               <button onClick={() => setTab("incoming")} className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all border ${tab === "incoming" ? "bg-primary/10 border-primary/40 text-primary" : "border-border/40 text-muted-foreground hover:text-foreground"}`}>
@@ -181,7 +176,7 @@ export default function Bookings() {
               </button>
             )}
             <button onClick={() => setTab("sent")} className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all border ${tab === "sent" ? "bg-primary/10 border-primary/40 text-primary" : "border-border/40 text-muted-foreground hover:text-foreground"}`}>
-              Sent Requests
+              {isArtist ? "Sent Requests" : "My Requests"}
             </button>
           </div>
 
@@ -439,7 +434,7 @@ export default function Bookings() {
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

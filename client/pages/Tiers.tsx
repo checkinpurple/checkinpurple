@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Radio, Check, ArrowLeft, Zap, Crown } from "lucide-react";
+import { Radio, Check, ArrowLeft, Zap, Crown, ExternalLink } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import AppSidebar from "@/components/AppSidebar";
 import { SubscriptionTier } from "@shared/api";
+import { ADMIN_EMAIL } from "@/lib/config";
 
 export default function Tiers() {
   const { user } = useAuth();
@@ -11,7 +13,12 @@ export default function Tiers() {
   const selectedTier = searchParams.get("selected");
   const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
   const [currentTierId, setCurrentTierId] = useState<string | null>(null);
-  const [loading, setLoading] = useState<string | null>(null);
+  const [selectedForPayment, setSelectedForPayment] = useState<SubscriptionTier | null>(null);
+  const [showPayPalModal, setShowPayPalModal] = useState(false);
+  const [manualTx, setManualTx] = useState("");
+  const [claiming, setClaiming] = useState(false);
+  const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
+  const [claimError, setClaimError] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -36,32 +43,62 @@ export default function Tiers() {
     }
   };
 
-  const handleSubscribe = async (tier: SubscriptionTier) => {
+  const handleSubscribe = (tier: SubscriptionTier) => {
     if (!user) { navigate("/signin"); return; }
+    if (isCurrentPlan(tier)) return;
+    
+    // Open PayPal modal for payment
+    setSelectedForPayment(tier);
+    setShowPayPalModal(true);
+    setClaimError(null);
+    setClaimSuccess(null);
+    setManualTx("");
+  };
 
-    setLoading(tier.id);
-    setError("");
+  const getPayPalLink = (tier: SubscriptionTier) => {
+    const amount = Number(tier.price_monthly).toFixed(2);
+    return `https://paypal.me/csign/${amount}`;
+  };
 
+  const handlePayPalPayment = () => {
+    if (!selectedForPayment) return;
+    window.open(getPayPalLink(selectedForPayment), "_blank", "noopener,noreferrer");
+  };
+
+  const handleClaimSubscription = async () => {
+    if (!manualTx || !user || !selectedForPayment) {
+      setClaimError("Please enter the PayPal transaction ID");
+      return;
+    }
+    
+    setClaiming(true);
+    setClaimError(null);
+    
     try {
-      const response = await fetch("/api/subscriptions/subscribe", {
+      const res = await fetch("/api/payments/manual-claim", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user.id}`,
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${user.id}` 
         },
-        body: JSON.stringify({
-          tier_id: tier.id,
+        body: JSON.stringify({ 
+          type: "subscription",
+          tierId: selectedForPayment.id,
+          tierName: selectedForPayment.name,
+          amount: selectedForPayment.price_monthly, 
+          txId: manualTx 
         }),
       });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Subscription failed");
-
-      navigate("/dashboard");
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit claim");
+      
+      setClaimSuccess("Subscription claim submitted! Your plan will be upgraded within 24 hours after payment verification.");
+      setManualTx("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Subscription failed. Please try again.");
+      setClaimError(err instanceof Error ? err.message : "Failed to submit claim");
     } finally {
-      setLoading(null);
+      setClaiming(false);
     }
   };
 
@@ -83,25 +120,11 @@ export default function Tiers() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="fixed top-0 w-full z-40 border-b border-border/40 glass">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Radio className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CheckinPurple
-            </span>
-          </Link>
-          <Link to="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
-            <ArrowLeft className="w-4 h-4" /> Back
-          </Link>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background flex">
+      <AppSidebar />
 
-      <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
+      <main className="flex-1 lg:ml-56 pt-16 lg:pt-0">
+        <div className="px-4 py-6 max-w-5xl mx-auto">
 
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
@@ -156,14 +179,14 @@ export default function Tiers() {
 
                   <button
                     onClick={() => handleSubscribe(tier)}
-                    disabled={loading === tier.id || isCurrentPlan(tier)}
+                    disabled={isCurrentPlan(tier)}
                     className={`w-full py-3 px-4 rounded-lg font-semibold transition-opacity ${
                       isCurrentPlan(tier)
                         ? "bg-primary/10 border border-primary/30 text-primary"
                         : "bg-primary text-primary-foreground hover:opacity-90"
                     } disabled:opacity-60`}
                   >
-                    {isCurrentPlan(tier) ? "Current Plan" : loading === tier.id ? "Processing..." : "Upgrade"}
+                    {isCurrentPlan(tier) ? "Current Plan" : "Upgrade via PayPal"}
                   </button>
                 </div>
               );
@@ -173,13 +196,99 @@ export default function Tiers() {
           {/* Artist payout note */}
           <div className="mt-10 p-6 glass rounded-2xl text-center">
             <p className="text-muted-foreground text-sm">
-              💰 Artists keep <span className="text-foreground font-bold">70%</span> of every coin tip received.
+              Artists keep <span className="text-foreground font-bold">70%</span> of every coin tip received.
               The remaining 30% supports the CheckinPurple platform.
-              Payouts available via <span className="text-foreground font-semibold">PayPal</span> or <span className="text-foreground font-semibold">bank transfer</span> — minimum R200 / $11.
+              Payouts available via <span className="text-foreground font-semibold">PayPal</span> or <span className="text-foreground font-semibold">bank transfer</span> - minimum R200 / $11.
             </p>
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* PayPal Payment Modal */}
+      {showPayPalModal && selectedForPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowPayPalModal(false)}>
+          <div className="bg-card rounded-2xl p-6 max-w-md w-full border border-border/40" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <span className="text-2xl font-bold text-blue-500">P</span>
+              </div>
+              <div>
+                <h3 className="font-bold">Pay with PayPal</h3>
+                <p className="text-xs text-muted-foreground">Upgrade to {selectedForPayment.name} Plan</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-card/50 rounded-xl border border-border/40 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">{selectedForPayment.name} Plan (Monthly)</span>
+                <span className="font-bold text-lg">${Number(selectedForPayment.price_monthly).toFixed(2)}</span>
+              </div>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                {getFeatures(selectedForPayment).slice(0, 3).map((f, i) => (
+                  <li key={i} className="flex items-center gap-1">
+                    <Check className="w-3 h-3 text-primary" /> {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              {/* Step 1: Pay */}
+              <div className="p-4 bg-card/30 rounded-xl border border-border/40">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">1</span>
+                  <span className="font-semibold text-sm">Click to pay via PayPal</span>
+                </div>
+                <button
+                  onClick={handlePayPalPayment}
+                  className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Pay ${Number(selectedForPayment.price_monthly).toFixed(2)} via PayPal
+                </button>
+              </div>
+
+              {/* Step 2: Submit claim */}
+              <div className="p-4 bg-card/30 rounded-xl border border-border/40">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</span>
+                  <span className="font-semibold text-sm">Submit transaction ID</span>
+                </div>
+                
+                <input 
+                  value={manualTx} 
+                  onChange={e => setManualTx(e.target.value)} 
+                  placeholder="PayPal transaction ID" 
+                  className="w-full bg-input text-foreground rounded-lg px-3 py-2.5 text-sm border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50 mb-3" 
+                />
+                
+                {claimError && <p className="text-destructive text-sm mb-2">{claimError}</p>}
+                {claimSuccess && <p className="text-green-500 text-sm mb-2">{claimSuccess}</p>}
+                
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleClaimSubscription} 
+                    disabled={claiming || !manualTx} 
+                    className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  >
+                    {claiming ? "Submitting..." : "Submit Claim"}
+                  </button>
+                  <button 
+                    onClick={() => setShowPayPalModal(false)} 
+                    className="px-4 py-2.5 border border-border/40 rounded-xl text-sm hover:bg-card/50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Your plan will be upgraded within 24 hours. Need help? Email <a href={`mailto:${ADMIN_EMAIL}`} className="text-primary hover:underline">{ADMIN_EMAIL}</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

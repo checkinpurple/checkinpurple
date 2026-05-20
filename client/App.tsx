@@ -30,7 +30,7 @@ import Bookings from "./pages/Bookings";
 import PostGig from "./pages/PostGig";
 import NotFound from "./pages/NotFound";
 
-const ADMIN_EMAIL = "wnmnyayi@gmail.com";
+const ADMIN_EMAIL = "checkinpurple@gmail.com";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({
@@ -110,8 +110,8 @@ export default function App() {
               <Route path="/artist-settings" element={<ProtectedRoute requiredRole="artist"><ArtistSettings /></ProtectedRoute>} />
               <Route path="/gigs/new" element={<ProtectedRoute requiredRole="artist"><PostGig /></ProtectedRoute>} />
 
-              {/* Fan */}
-              <Route path="/listen" element={<ProtectedRoute requiredRole="fan"><Listen /></ProtectedRoute>} />
+              {/* Discovery - available to all logged-in users */}
+              <Route path="/listen" element={<ProtectedRoute><Listen /></ProtectedRoute>} />
 
               {/* Influencer */}
               <Route path="/influencer" element={<ProtectedRoute requiredRole="influencer"><Influencer /></ProtectedRoute>} />

@@ -4,7 +4,7 @@ import {
   ShoppingBag, Plus, Package, Ticket, Download,
   Edit3, Trash2, Check, X, TrendingUp, Coins,
   Music, Play, Pause, Headphones, ExternalLink,
-  Search, Star
+  Search, Star, Settings, MapPin
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import AppSidebar from "@/components/AppSidebar";
@@ -70,12 +70,22 @@ export default function MerchantPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [dressingRequests, setDressingRequests] = useState<DressingRequest[]>([]);
-  const [tab, setTab] = useState<"products" | "orders" | "dressing" | "discover">("products");
+  const [tab, setTab] = useState<"products" | "orders" | "dressing" | "discover" | "settings">("products");
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [playing, setPlaying] = useState<string | null>(null);
   const imageRef = useRef<HTMLInputElement>(null);
+
+  // Store settings
+  const [storeSettings, setStoreSettings] = useState({
+    brandName: "",
+    deliveryRadius: "",
+    deliveryNote: "",
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     title: "", description: "", price_zar: "",
@@ -102,6 +112,7 @@ export default function MerchantPage() {
       navigate("/dashboard"); return;
     }
     fetchData();
+    fetchStoreSettings();
   }, [user]);
 
   const fetchData = async () => {
@@ -115,6 +126,53 @@ export default function MerchantPage() {
       if (oData.success) setOrders(oData.orders || []);
     } catch {}
     finally { setLoading(false); }
+  };
+
+  const fetchStoreSettings = async () => {
+    try {
+      const res = await fetch("/api/store/settings", { 
+        headers: { Authorization: `Bearer ${user?.id}` } 
+      });
+      const data = await res.json();
+      if (data.success && data.settings) {
+        setStoreSettings({
+          brandName: data.settings.brand_name || "",
+          deliveryRadius: data.settings.delivery_radius || "",
+          deliveryNote: data.settings.delivery_note || "",
+        });
+      }
+    } catch {}
+  };
+
+  const saveStoreSettings = async () => {
+    setSavingSettings(true);
+    setSettingsError(null);
+    setSettingsSuccess(null);
+    
+    try {
+      const res = await fetch("/api/store/settings", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${user?.id}` 
+        },
+        body: JSON.stringify({
+          brand_name: storeSettings.brandName,
+          delivery_radius: storeSettings.deliveryRadius,
+          delivery_note: storeSettings.deliveryNote,
+        }),
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings");
+      
+      setSettingsSuccess("Store settings saved successfully!");
+      setTimeout(() => setSettingsSuccess(null), 3000);
+    } catch (err) {
+      setSettingsError(err instanceof Error ? err.message : "Failed to save settings");
+    } finally {
+      setSavingSettings(false);
+    }
   };
 
   const handleAddProduct = async () => {
@@ -152,6 +210,7 @@ export default function MerchantPage() {
     { id: "orders", label: `Orders${stats.pendingOrders > 0 ? ` (${stats.pendingOrders})` : ""}` },
     { id: "dressing", label: `Dressing${dressingRequests.filter(r => r.status === "pending").length > 0 ? ` (${dressingRequests.filter(r => r.status === "pending").length})` : ""}` },
     { id: "discover", label: "Discover Music" },
+    { id: "settings", label: "Store Settings" },
   ] as { id: typeof tab; label: string }[];
 
   return (
@@ -307,7 +366,7 @@ export default function MerchantPage() {
                   </button>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{track.title}</p>
-                    <p className="text-xs text-muted-foreground">{track.artist} · {track.genre}</p>
+                    <p className="text-xs text-muted-foreground">{track.artist} - {track.genre}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="text-xs text-muted-foreground">{track.duration}</span>
@@ -318,6 +377,92 @@ export default function MerchantPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Store Settings */}
+          {tab === "settings" && (
+            <div className="max-w-lg">
+              <div className="glass rounded-2xl p-6 space-y-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+                    <Settings className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">Store Settings</h3>
+                    <p className="text-xs text-muted-foreground">Configure your brand and delivery options</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Brand Name</label>
+                    <input
+                      value={storeSettings.brandName}
+                      onChange={e => setStoreSettings(s => ({ ...s, brandName: e.target.value }))}
+                      placeholder="Your store/brand name"
+                      className="w-full bg-input text-foreground rounded-lg px-4 py-3 border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">This will be displayed on your store page and product listings</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-orange-400" />
+                      Delivery Radius
+                    </label>
+                    <input
+                      value={storeSettings.deliveryRadius}
+                      onChange={e => setStoreSettings(s => ({ ...s, deliveryRadius: e.target.value }))}
+                      placeholder="e.g. Johannesburg, Pretoria, Nationwide"
+                      className="w-full bg-input text-foreground rounded-lg px-4 py-3 border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Specify the areas where you can deliver physical products</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Delivery Note (optional)</label>
+                    <textarea
+                      value={storeSettings.deliveryNote}
+                      onChange={e => setStoreSettings(s => ({ ...s, deliveryNote: e.target.value }))}
+                      placeholder="Additional delivery information, estimated times, or special instructions..."
+                      rows={3}
+                      className="w-full bg-input text-foreground rounded-lg px-4 py-3 border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                    />
+                  </div>
+                </div>
+
+                {settingsError && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm">
+                    {settingsError}
+                  </div>
+                )}
+
+                {settingsSuccess && (
+                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-500 text-sm flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    {settingsSuccess}
+                  </div>
+                )}
+
+                <button
+                  onClick={saveStoreSettings}
+                  disabled={savingSettings}
+                  className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {savingSettings ? "Saving..." : "Save Settings"}
+                </button>
+              </div>
+
+              <div className="mt-6 p-4 border border-border/40 rounded-xl bg-card/20">
+                <h4 className="font-semibold text-sm mb-2">Merchant-Only Features</h4>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> Manage your product listings</li>
+                  <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> Track orders and deliveries</li>
+                  <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> Set brand name and delivery radius</li>
+                  <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> Receive dressing requests from artists</li>
+                </ul>
+              </div>
             </div>
           )}
 

@@ -119,12 +119,13 @@ export default function SignUp() {
       return;
     }
 
-    const paymentRequired = profiles.length >= 2;
+    const paymentRequired = tier !== "Basic";
     try {
       setLoading(true);
       await signUp(formData.email, formData.password, formData.username, activeProfile, profiles, tier);
       if (paymentRequired) {
-        navigate(`/tiers?selected=${tier}`);
+        // Premium and Standard tiers require payment before accessing dashboard
+        navigate(`/tiers?selected=${tier}&pending=true`);
       } else {
         navigate("/dashboard");
       }
@@ -299,7 +300,12 @@ export default function SignUp() {
                   autoComplete="new-password"
                   className="w-full bg-input text-foreground rounded-lg px-4 py-3 border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <button 
+                  type="button" 
+                  onClick={(e) => { e.preventDefault(); setShowPassword(!showPassword); }} 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
