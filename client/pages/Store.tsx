@@ -22,6 +22,8 @@ interface Product {
   event_location?: string;
 }
 
+const AMAZON_ASSOCIATE_TAG = import.meta.env.VITE_AMAZON_ASSOCIATE_TAG as string | undefined;
+
 interface CartItem {
   product: Product;
   quantity: number;
@@ -134,6 +136,16 @@ export default function Store() {
     return matchesSearch && matchesCategory;
   });
 
+  const getAmazonAffiliateLink = (product: Product) => {
+    if (!AMAZON_ASSOCIATE_TAG) return null;
+    const params = new URLSearchParams({
+      k: product.title,
+      tag: AMAZON_ASSOCIATE_TAG,
+      linkCode: "ll2",
+    });
+    return `https://www.amazon.com/s?${params.toString()}`;
+  };
+
   const getCategoryIcon = (cat: string) => {
     if (cat === "merch") return <Package className="w-4 h-4" />;
     if (cat === "digital") return <Download className="w-4 h-4" />;
@@ -207,6 +219,16 @@ export default function Store() {
                       <p className="text-xs text-accent mb-1">📅 {new Date(p.event_date).toLocaleDateString("en-ZA")} · {p.event_location}</p>
                     )}
                     {p.description && <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{p.description}</p>}
+                    {getAmazonAffiliateLink(p) && (
+                      <a
+                        href={getAmazonAffiliateLink(p) as string}
+                        target="_blank"
+                        rel="noopener noreferrer sponsored"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline mb-3"
+                      >
+                        Buy on Amazon <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-lg font-bold text-primary">R{p.price_zar}</p>

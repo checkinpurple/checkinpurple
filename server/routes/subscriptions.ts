@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import { supabase } from "../lib/supabase";
+import { logCoinRiskEvent } from "../lib/coin-risk";
 import {
   SubscriptionTier,
   UserSubscription,
@@ -236,6 +237,10 @@ export const purchaseCoins: RequestHandler = async (req, res) => {
 
     if (pkgError) throw pkgError;
 
+    if (pkg.coin_amount > 20000) {
+      await logCoinRiskEvent(userId, "purchase", "Large coin package purchase", "medium", { package_id, coin_amount: pkg.coin_amount });
+    }
+
     // Create transaction
     const { data: transaction, error: txError } = await supabase
       .from("coin_transactions")
@@ -286,6 +291,7 @@ export const tipArtist: RequestHandler = async (req, res) => {
     if (balanceError) throw balanceError;
 
     if (!userCoins || userCoins.balance < amount) {
+      await logCoinRiskEvent(userId, "tip", "Insufficient balance tip attempt", "high", { to_user_id, amount, balance: userCoins?.balance ?? 0 });
       return res.status(400).json({ error: "Insufficient coin balance" });
     }
 
@@ -303,6 +309,10 @@ export const tipArtist: RequestHandler = async (req, res) => {
       .single();
 
     if (tipError) throw tipError;
+
+    if (amount >= 5000) {
+      await logCoinRiskEvent(userId, "tip", "High-value tip", "medium", { to_user_id, amount, stream_id: stream_id || null });
+    }
 
     // Create transaction for spending
     await supabase

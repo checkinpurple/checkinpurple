@@ -12,6 +12,7 @@ import ProfileCard from "@/components/ProfileCard";
 import TransferCoins from "@/components/TransferCoins";
 import Notifications from "@/components/Notifications";
 import AppSidebar from "@/components/AppSidebar";
+import FanStatus from "@/components/FanStatus";
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -121,6 +122,10 @@ export default function Dashboard() {
             onUpdate={(data) => setProfileData(p => ({ ...p, ...data }))}
           />
 
+          {(isFan || isAdmin) && (
+            <FanStatus editable />
+          )}
+
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 rounded-xl border border-border/40 bg-card/30 text-center">
@@ -218,6 +223,16 @@ export default function Dashboard() {
                 </div>
                 <p className="font-bold text-sm mb-0.5">Submit Music</p>
                 <p className="text-xs text-muted-foreground">200 coins · Playlist</p>
+              </Link>
+            )}
+
+            {isArtist && (
+              <Link to="/playlists" className="group p-4 rounded-2xl border border-border/40 bg-card/30 hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/30 to-violet-500/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                  <Music className="w-5 h-5 text-indigo-400" />
+                </div>
+                <p className="font-bold text-sm mb-0.5">Playlists</p>
+                <p className="text-xs text-muted-foreground">Personalise for bookings</p>
               </Link>
             )}
 
@@ -324,8 +339,22 @@ export default function Dashboard() {
             )}
           </div>
 
+          <div className="pt-2">
+            <button
+              onClick={async () => {
+                if (!confirm("Are you sure you want to delete your account? This cannot be undone.")) return;
+                await fetch("/api/account", { method: "DELETE", headers: { Authorization: `Bearer ${user.id}` } });
+                await signOut();
+                navigate("/");
+              }}
+              className="text-xs text-red-400 hover:underline"
+            >
+              Delete Account
+            </button>
+          </div>
+
           {/* Upgrade banner */}
-          {availableProfiles.length === 1 && !isAdmin && (
+          {availableProfiles.length === 1 && !isAdmin && user.tier !== "Premium" && (
             <div className="p-4 rounded-2xl border border-dashed border-primary/30 bg-primary/5 flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-3">
                 <Zap className="w-7 h-7 text-primary flex-shrink-0" />

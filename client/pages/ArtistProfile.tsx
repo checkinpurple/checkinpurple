@@ -26,6 +26,10 @@ interface ArtistProfile {
   social_instagram?: string;
   social_twitter?: string;
   social_soundcloud?: string;
+  streaming_spotify?: string;
+  streaming_apple?: string;
+  streaming_audiomack?: string;
+  skills?: string[];
   is_verified?: boolean;
   follower_count?: number;
   role: string;
@@ -225,6 +229,26 @@ export default function ArtistProfile() {
                 <span key={g} className="text-xs px-2 py-0.5 rounded-full bg-card border border-border/40 text-muted-foreground">{g}</span>
               ))}
             </div>
+            {artist.skills && artist.skills.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {artist.skills.map((skill) => (
+                  <span key={skill} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    {skill.split("_").join(" ")}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-2 mb-3">
+              {artist.streaming_spotify && (
+                <a href={artist.streaming_spotify.startsWith("http") ? artist.streaming_spotify : `https://${artist.streaming_spotify}`} target="_blank" rel="noreferrer" className="text-xs px-2 py-1 rounded-full border border-border/40 hover:bg-card/50">Spotify</a>
+              )}
+              {artist.streaming_apple && (
+                <a href={artist.streaming_apple.startsWith("http") ? artist.streaming_apple : `https://${artist.streaming_apple}`} target="_blank" rel="noreferrer" className="text-xs px-2 py-1 rounded-full border border-border/40 hover:bg-card/50">Apple Music</a>
+              )}
+              {artist.streaming_audiomack && (
+                <a href={artist.streaming_audiomack.startsWith("http") ? artist.streaming_audiomack : `https://${artist.streaming_audiomack}`} target="_blank" rel="noreferrer" className="text-xs px-2 py-1 rounded-full border border-border/40 hover:bg-card/50">Audiomack</a>
+              )}
+            </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
               <span><b className="text-foreground">{followerCount}</b> followers</span>
             </div>
@@ -347,22 +371,31 @@ export default function ArtistProfile() {
 
         {tab === "gallery" && (
           <div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {galleryImages.map((src, i) => (
-                <button
-                  key={i}
-                  onClick={() => setLightboxIdx(i)}
-                  className="aspect-square rounded-xl overflow-hidden bg-card border border-border/40 hover:opacity-90 transition-opacity"
-                >
-                  <img src={src} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-            {galleryImages.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground text-sm">
-                <Camera className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                No gallery images yet.
+            {(!isFollowing && !isAdmin && user?.id !== artist.id) ? (
+              <div className="text-center py-12 text-muted-foreground text-sm rounded-xl border border-border/40 bg-card/30">
+                <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                Follow to view gallery.
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {galleryImages.map((src, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setLightboxIdx(i)}
+                      className="aspect-square rounded-xl overflow-hidden bg-card border border-border/40 hover:opacity-90 transition-opacity"
+                    >
+                      <img src={src} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+                {galleryImages.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground text-sm">
+                    <Camera className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    No gallery images yet.
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

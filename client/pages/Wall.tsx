@@ -40,7 +40,7 @@ interface WallPost {
   liked?: boolean;
 }
 
-// Mock feed data — replace with real API calls
+// Fallback mock feed
 const MOCK_POSTS: WallPost[] = [
   {
     id: "1", type: "stream", author: "Nova Shade", authorRole: "artist", verified: true,
@@ -287,14 +287,26 @@ const FILTERS: { id: PostType | "all"; label: string }[] = [
 
 export default function Wall() {
   const { user } = useAuth();
-  const [posts, setPosts] = useState<WallPost[]>(MOCK_POSTS);
+  const [posts, setPosts] = useState<WallPost[]>([]);
   const [filter, setFilter] = useState<PostType | "all">("all");
   const [loading, setLoading] = useState(false);
 
-  // In production, fetch from /api/wall/feed
   useEffect(() => {
-    // fetchFeed();
-  }, [filter]);
+    const fetchFeed = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/wall/feed");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.posts)) setPosts(data.posts);
+        else setPosts([]);
+      } catch {
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeed();
+  }, []);
 
   const handleLike = (id: string) => {
     setPosts(prev => prev.map(p =>

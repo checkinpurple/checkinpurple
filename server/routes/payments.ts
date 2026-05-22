@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { supabase } from "../lib/supabase";
+import { logCoinRiskEvent } from "../lib/coin-risk";
 
 // Manual claim endpoint: record PayPal.me manual claims for admin to reconcile
 export async function manualClaim(req: Request, res: Response) {
@@ -9,6 +10,10 @@ export async function manualClaim(req: Request, res: Response) {
 
     const { amount, txId, notes, tierId, tierName, type } = req.body;
     if (!amount || !txId) return res.status(400).json({ error: "amount and txId are required" });
+
+    if (Number(amount) >= 10000) {
+      await logCoinRiskEvent(userId, "withdraw_or_claim", "Large manual payment claim", "high", { amount, txId, type: type || null });
+    }
 
     const { error } = await supabase.from("manual_payments").insert([{
       user_id: userId,

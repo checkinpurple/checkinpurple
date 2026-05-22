@@ -64,7 +64,7 @@ export default function SignUp() {
     ["fan", "artist", "merchant", "influencer"].includes(initialProfile) ? [initialProfile] : ["fan"]
   );
   const [activeProfile, setActiveProfile] = useState<ProfileType>(profiles[0] || "fan");
-  const [formData, setFormData] = useState({ email: "", password: "", username: "" });
+  const [formData, setFormData] = useState({ email: "", phone: "", password: "", username: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -97,8 +97,8 @@ export default function SignUp() {
     e.preventDefault();
     setError("");
 
-    if (!formData.email || !formData.password || !formData.username) {
-      setError("All fields are required"); return;
+    if (!formData.email || !formData.password || !formData.username || !formData.phone) {
+      setError("Email, cell phone number, username and password are required"); return;
     }
     if (formData.password.length < 8) {
       setError("Password must be at least 8 characters"); return;
@@ -122,7 +122,7 @@ export default function SignUp() {
     const paymentRequired = tier !== "Basic";
     try {
       setLoading(true);
-      await signUp(formData.email, formData.password, formData.username, activeProfile, profiles, tier);
+      await signUp(formData.email, formData.phone, formData.password, formData.username, activeProfile, profiles, tier);
       if (paymentRequired) {
         // Premium and Standard tiers require payment before accessing dashboard
         navigate(`/tiers?selected=${tier}&pending=true`);
@@ -285,6 +285,17 @@ export default function SignUp() {
                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                 placeholder="you@example.com"
                 autoComplete="email"
+                className="w-full bg-input text-foreground rounded-lg px-4 py-3 border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Cell phone number</label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="e.g. +27821234567"
                 className="w-full bg-input text-foreground rounded-lg px-4 py-3 border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>

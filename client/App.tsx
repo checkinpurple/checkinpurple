@@ -29,7 +29,10 @@ import ArtistSettings from "./pages/ArtistSettings";
 import Bookings from "./pages/Bookings";
 import PostGig from "./pages/PostGig";
 import Wall from "./pages/Wall";
+import FanProfile from "./pages/FanProfile";
+import InfluencerProfile from "./pages/InfluencerProfile";
 import NotFound from "./pages/NotFound";
+import PlaylistsPage from "./pages/Playlists";
 
 const ADMIN_EMAIL = "checkinpurple@gmail.com";
 const queryClient = new QueryClient();
@@ -96,6 +99,8 @@ export default function App() {
               <Route path="/store" element={<Store />} />
               <Route path="/parties" element={<ListeningParties />} />
               <Route path="/artist/:username" element={<ArtistProfile />} />
+              <Route path="/fan/:username" element={<FanProfile />} />
+              <Route path="/influencer/:username" element={<InfluencerProfile />} />
 
               {/* Any logged-in user */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -106,6 +111,7 @@ export default function App() {
               <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
 
               {/* Artist */}
+              <Route path="/playlists" element={<ProtectedRoute requiredRole="artist"><PlaylistsPage /></ProtectedRoute>} />
               <Route path="/broadcast" element={<ProtectedRoute requiredRole="artist"><Broadcast /></ProtectedRoute>} />
               <Route path="/wallet" element={<ProtectedRoute requiredRole="artist"><Wallet /></ProtectedRoute>} />
               <Route path="/releases" element={<ProtectedRoute requiredRole="artist"><Releases /></ProtectedRoute>} />

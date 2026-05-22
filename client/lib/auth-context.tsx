@@ -10,6 +10,7 @@ interface AuthContextType {
   isImpersonating: boolean;
   signUp: (
     email: string,
+    phone: string,
     password: string,
     username: string,
     activeProfile: ProfileType,
@@ -68,6 +69,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+
+  const ensureUserRow = async (authUser: { id: string; email?: string | null; user_metadata?: any; created_at?: string }) => {
+    const metadata = authUser.user_metadata || {};
+    const username = metadata.username || `user_${authUser.id.slice(0, 8)}`;
+    const role = (metadata.role as User["role"]) || "fan";
+
+    await supabase
+      .from("users")
+      .upsert({
+        id: authUser.id,
+        email: authUser.email || "",
+        username,
+        phone: metadata.phone || null,
+        role,
+        created_at: authUser.created_at || new Date().toISOString(),
+      }, { onConflict: "id" });
+  };
+
   const fetchUserProfile = async (userId: string) => {
     try {
       const [profileRes, profileRowsRes, authRes] = await Promise.all([
@@ -77,6 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ]);
 
       const profile = profileRes.data;
+      if (!profile && authRes.data?.user) {
+        await ensureUserRow(authRes.data.user as any);
+      }
       const profileRows = Array.isArray(profileRowsRes.data) ? profileRowsRes.data : [];
       const metadata = authRes.data?.user?.user_metadata as any;
       const profileList = profileRows.map((row: any) => row.profile_type as ProfileType);
@@ -116,6 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (
     email: string,
+    phone: string,
     password: string,
     username: string,
     activeProfile: ProfileType,
@@ -132,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         options: {
-          data: { username, role: activeProfile, profiles, tier },
+          data: { username, phone, role: activeProfile, profiles, tier },
         },
       });
 

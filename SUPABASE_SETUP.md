@@ -291,3 +291,23 @@ When deploying to Vercel/Netlify:
 - **This project's Architecture:** See `ARCHITECTURE.md`
 - **API Reference:** See `API_SPEC.md`
 - **Quick Start:** See `QUICKSTART.md`
+
+---
+
+## Supabase CLI Linking + Migrations (Production)
+
+If you deploy backend routes that depend on new tables/columns, link your local project to Supabase and push migrations:
+
+```bash
+supabase login
+supabase link --project-ref <YOUR_PROJECT_REF>
+supabase db push
+```
+
+To verify migration status:
+
+```bash
+supabase migration list
+```
+
+For this current change set (Broadcast/Listen/Wallet UI + Livepeer request flow + Store affiliate link rendering), **no new SQL migration is required**.

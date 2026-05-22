@@ -9,17 +9,18 @@
 ### 🎤 Artist Profile Page
 - [ ] **Collabs on public profile** — wire `<ArtistCollabs viewUserId={artist.id} />` into ArtistProfile's About tab. Component already built in Batch 2.
 - [ ] **OG meta on ArtistProfile** — drop `<OGMeta title={...} description={...} image={artist.avatar_url} />` at top of ArtistProfile. Component already built.
-- [ ] **Skills displayed on profile** — render `artist.skills` array as icon chips (data saved, just needs UI).
-- [ ] **Streaming links on profile** — show Spotify/Apple Music/Audiomack as icon buttons under artist name.
+- [x] **Skills displayed on profile** — render `artist.skills` array as icon chips (data saved, just needs UI).
+- [x] **Streaming links on profile** — show Spotify/Apple Music/Audiomack as icon buttons under artist name.
 
 ### 👨‍👩‍👧 Fan Public Profile
-- [ ] **`/fan/:username` route** — public fan profile page: display name, bio, artists they follow, FanStatus. Route in App.tsx.
-- [ ] **Fan status on Dashboard** — wire `<FanStatus editable />` into Fan Dashboard. DB column already added.
+- [x] **`/fan/:username` route** — public fan profile page: display name, bio, artists they follow, FanStatus. Route in App.tsx.
+- [x] **Fan status on Dashboard** — wire `<FanStatus editable />` into Fan Dashboard. DB column already added.
 
 ### 📢 Influencer
-- [ ] **`/influencer/:username` public profile** — page showing reach, platforms, active promotions, and "Propose Deal" button.
+- [x] **`/influencer/:username` public profile** — page showing reach, platforms, active promotions, and "Propose Deal" button.
 
 ### 💳 Wallet
+- [x] **Coin fraud/risk events tracking** — added `coin_risk_events` table + server logging for high-risk coin actions.
 - [ ] **Payout email to admin** — on withdrawal POST, send Resend email to `checkinpurple@gmail.com`: `New payout request from @username — R{amount}`.
 
 ---
@@ -27,9 +28,9 @@
 ## 🟡 Medium Priority
 
 ### 🎤 Artist
-- [ ] **Photo gallery — followers only gate** — check `isFollowing` before rendering gallery; show "Follow to view" if not.
+- [x] **Photo gallery — followers only gate** — check `isFollowing` before rendering gallery; show "Follow to view" if not.
 - [ ] **Gallery upload in ArtistSettings** — Supabase Storage bucket `artist-gallery`, store URLs in `gallery_images text[]` on users.
-- [ ] **Personalised playlists** — artist tags a playlist to a specific fan/group. Fan sees it after following.
+- [x] **Personalised playlists** — artist tags a playlist to a specific fan/group. Fan sees it after following.
 - [ ] **Booking availability calendar** — date-picker instead of free-text; artist marks slots, fan selects when booking.
 - [ ] **Saved streams library tab** — "Past Streams" tab on Artist Dashboard. Route and server handler already built (`savedStreams.ts`).
 
@@ -45,8 +46,8 @@
 ## 🔴 Harder / Backend
 
 ### 🌐 Wall / Feed Real API
-- [ ] **`/api/wall/feed` endpoint** — aggregate streams, snippets, promos, merch drops, gigs. Paginate with cursor. `Wall.tsx` ready and waiting.
-- [ ] **Wall post on stream start** — `POST /api/streams` should auto-insert a wall post of type `stream`.
+- [x] **`/api/wall/feed` endpoint** — aggregate streams, snippets, promos, merch drops, gigs. Paginate with cursor. `Wall.tsx` ready and waiting.
+- [x] **Wall post on stream start** — `POST /api/streams` should auto-insert a wall post of type `stream`.
 - [ ] **Wall post on merchant availability** — insert wall post when `is_available` flips to `true`.
 
 ---
