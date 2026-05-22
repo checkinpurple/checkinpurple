@@ -487,9 +487,10 @@ export default function Broadcast() {
                     disabled={isLive}
                     className="w-full bg-input text-foreground rounded-lg px-4 py-3 border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                   >
-                    {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                    {GENRES.map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
                   </select>
-                </div>
                 </div>
               </div>
 
