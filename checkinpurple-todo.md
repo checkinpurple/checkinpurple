@@ -9,12 +9,12 @@
 ### 🎤 Artist Profile Page
 - [ ] **Collabs on public profile** — wire `<ArtistCollabs viewUserId={artist.id} />` into ArtistProfile's About tab. Component already built in Batch 2.
 - [ ] **OG meta on ArtistProfile** — drop `<OGMeta title={...} description={...} image={artist.avatar_url} />` at top of ArtistProfile. Component already built.
-- [ ] **Skills displayed on profile** — render `artist.skills` array as icon chips (data saved, just needs UI).
-- [ ] **Streaming links on profile** — show Spotify/Apple Music/Audiomack as icon buttons under artist name.
+- [x] **Skills displayed on profile** — render `artist.skills` array as icon chips (data saved, just needs UI).
+- [x] **Streaming links on profile** — show Spotify/Apple Music/Audiomack as icon buttons under artist name.
 
 ### 👨‍👩‍👧 Fan Public Profile
-- [ ] **`/fan/:username` route** — public fan profile page: display name, bio, artists they follow, FanStatus. Route in App.tsx.
-- [ ] **Fan status on Dashboard** — wire `<FanStatus editable />` into Fan Dashboard. DB column already added.
+- [x] **`/fan/:username` route** — public fan profile page: display name, bio, artists they follow, FanStatus. Route in App.tsx.
+- [x] **Fan status on Dashboard** — wire `<FanStatus editable />` into Fan Dashboard. DB column already added.
 
 ### 📢 Influencer
 - [ ] **`/influencer/:username` public profile** — page showing reach, platforms, active promotions, and "Propose Deal" button.
@@ -45,7 +45,7 @@
 ## 🔴 Harder / Backend
 
 ### 🌐 Wall / Feed Real API
-- [ ] **`/api/wall/feed` endpoint** — aggregate streams, snippets, promos, merch drops, gigs. Paginate with cursor. `Wall.tsx` ready and waiting.
+- [x] **`/api/wall/feed` endpoint** — aggregate streams, snippets, promos, merch drops, gigs. Paginate with cursor. `Wall.tsx` ready and waiting.
 - [ ] **Wall post on stream start** — `POST /api/streams` should auto-insert a wall post of type `stream`.
 - [ ] **Wall post on merchant availability** — insert wall post when `is_available` flips to `true`.
 

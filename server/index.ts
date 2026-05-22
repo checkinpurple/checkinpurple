@@ -53,6 +53,8 @@ import {
 import { createLivepeerStreamKey } from "./routes/livepeer";
 import { listUsers, updateUserRole, setUserBanned, listSubmissions } from "./routes/admin";
 import { listParties } from "./routes/parties";
+import { getWallFeed } from "./routes/wall";
+import { supabase } from "./lib/supabase";
 import {
   getStoreSettings,
   updateStoreSettings,
@@ -201,6 +203,9 @@ export function createServer() {
   app.get("/api/releases", getScheduledReleases);
   app.post("/api/releases", createScheduledRelease);
   app.post("/api/releases/book", bookRelease);
+
+    // Wall
+  app.get("/api/wall/feed", getWallFeed);
 
   // Public stats (user count for homepage)
   app.get("/api/public/stats", async (_req, res) => {

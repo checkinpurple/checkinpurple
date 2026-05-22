@@ -12,6 +12,7 @@ import ProfileCard from "@/components/ProfileCard";
 import TransferCoins from "@/components/TransferCoins";
 import Notifications from "@/components/Notifications";
 import AppSidebar from "@/components/AppSidebar";
+import FanStatus from "@/components/FanStatus";
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -120,6 +121,10 @@ export default function Dashboard() {
             followingCount={followingCount}
             onUpdate={(data) => setProfileData(p => ({ ...p, ...data }))}
           />
+
+          {(isFan || isAdmin) && (
+            <FanStatus editable />
+          )}
 
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-3">
