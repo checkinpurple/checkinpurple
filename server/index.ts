@@ -162,6 +162,17 @@ export function createServer() {
   app.get("/api/health", healthCheck);
 
   // Admin
+  app.get("/api/admin/coin-risk-events", async (req, res) => {
+    try {
+      if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+      const admin = await supabase.from("users").select("role").eq("id", req.user.id).single();
+      if (admin.data?.role !== "admin") return res.status(403).json({ error: "Forbidden" });
+      const out = await supabase.from("coin_risk_events").select("*").order("created_at", { ascending: false }).limit(200);
+      return res.json({ events: out.data || [] });
+    } catch {
+      return res.status(500).json({ error: "Failed to fetch risk events" });
+    }
+  });
   app.get("/api/admin/users", listUsers);
   app.patch("/api/admin/users/:userId/role", updateUserRole);
   app.patch("/api/admin/users/:userId/ban", setUserBanned);

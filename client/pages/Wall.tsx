@@ -297,10 +297,10 @@ export default function Wall() {
       try {
         const res = await fetch("/api/wall/feed");
         const data = await res.json();
-        if (data.success && Array.isArray(data.posts) && data.posts.length > 0) setPosts(data.posts);
-        else setPosts(MOCK_POSTS);
+        if (data.success && Array.isArray(data.posts)) setPosts(data.posts);
+        else setPosts([]);
       } catch {
-        setPosts(MOCK_POSTS);
+        setPosts([]);
       } finally {
         setLoading(false);
       }

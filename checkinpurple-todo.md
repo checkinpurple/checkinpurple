@@ -20,6 +20,7 @@
 - [x] **`/influencer/:username` public profile** — page showing reach, platforms, active promotions, and "Propose Deal" button.
 
 ### 💳 Wallet
+- [x] **Coin fraud/risk events tracking** — added `coin_risk_events` table + server logging for high-risk coin actions.
 - [ ] **Payout email to admin** — on withdrawal POST, send Resend email to `checkinpurple@gmail.com`: `New payout request from @username — R{amount}`.
 
 ---
