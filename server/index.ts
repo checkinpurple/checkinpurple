@@ -64,7 +64,7 @@ import {
   createProduct,
   getMerchantOrders,
 } from "./routes/store";
-import { supabase } from "./lib/supabase";
+ 
 
 declare global {
   namespace Express {
