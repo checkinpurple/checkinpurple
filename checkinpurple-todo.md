@@ -17,7 +17,7 @@
 - [x] **Fan status on Dashboard** — wire `<FanStatus editable />` into Fan Dashboard. DB column already added.
 
 ### 📢 Influencer
-- [ ] **`/influencer/:username` public profile** — page showing reach, platforms, active promotions, and "Propose Deal" button.
+- [x] **`/influencer/:username` public profile** — page showing reach, platforms, active promotions, and "Propose Deal" button.
 
 ### 💳 Wallet
 - [ ] **Payout email to admin** — on withdrawal POST, send Resend email to `checkinpurple@gmail.com`: `New payout request from @username — R{amount}`.
@@ -46,7 +46,7 @@
 
 ### 🌐 Wall / Feed Real API
 - [x] **`/api/wall/feed` endpoint** — aggregate streams, snippets, promos, merch drops, gigs. Paginate with cursor. `Wall.tsx` ready and waiting.
-- [ ] **Wall post on stream start** — `POST /api/streams` should auto-insert a wall post of type `stream`.
+- [x] **Wall post on stream start** — `POST /api/streams` should auto-insert a wall post of type `stream`.
 - [ ] **Wall post on merchant availability** — insert wall post when `is_available` flips to `true`.
 
 ---

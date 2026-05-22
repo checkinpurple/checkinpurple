@@ -30,6 +30,7 @@ import Bookings from "./pages/Bookings";
 import PostGig from "./pages/PostGig";
 import Wall from "./pages/Wall";
 import FanProfile from "./pages/FanProfile";
+import InfluencerProfile from "./pages/InfluencerProfile";
 import NotFound from "./pages/NotFound";
 
 const ADMIN_EMAIL = "checkinpurple@gmail.com";
@@ -98,6 +99,7 @@ export default function App() {
               <Route path="/parties" element={<ListeningParties />} />
               <Route path="/artist/:username" element={<ArtistProfile />} />
               <Route path="/fan/:username" element={<FanProfile />} />
+              <Route path="/influencer/:username" element={<InfluencerProfile />} />
 
               {/* Any logged-in user */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
