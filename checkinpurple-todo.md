@@ -126,6 +126,7 @@ app.get("/api/streams/saved/public/:userId", getPublicSavedStreams);
 - [x] Wallet — minimum withdrawal prominently shown with full payout info banner
 - [x] Broadcast — "Save this stream" toggle with Public/Followers/Private privacy
 - [x] Broadcast — share link auto-generated and copyable when stream goes live
+- [x] Broadcast — fixed `Broadcast.tsx` share link naming conflict and copy handler
 - [x] Listen — Share button on every stream card (Web Share API + clipboard fallback)
 - [x] ArtistCollabs component — search, invite, accept/decline, display collab chips
 - [x] OGMeta component — og:title, og:description, og:image, twitter:card for WhatsApp/Twitter
