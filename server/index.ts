@@ -53,6 +53,7 @@ import {
 import { createLivepeerStreamKey } from "./routes/livepeer";
 import { listUsers, updateUserRole, setUserBanned, listSubmissions } from "./routes/admin";
 import { listParties } from "./routes/parties";
+import { listMyPlaylists, createPlaylist, buyPlaylistSlotWithCoins } from "./routes/playlists";
 import { getWallFeed } from "./routes/wall";
 import { supabase } from "./lib/supabase";
 import {
@@ -177,6 +178,11 @@ export function createServer() {
   app.patch("/api/admin/users/:userId/role", updateUserRole);
   app.patch("/api/admin/users/:userId/ban", setUserBanned);
   app.get("/api/admin/submissions", listSubmissions);
+
+  // Playlists
+  app.get("/api/playlists", listMyPlaylists);
+  app.post("/api/playlists", createPlaylist);
+  app.post("/api/playlists/buy-slot", buyPlaylistSlotWithCoins);
 
   // Parties
   app.get("/api/parties", listParties);

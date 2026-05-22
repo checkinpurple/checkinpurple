@@ -227,6 +227,16 @@ export default function Dashboard() {
             )}
 
             {isArtist && (
+              <Link to="/playlists" className="group p-4 rounded-2xl border border-border/40 bg-card/30 hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/30 to-violet-500/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                  <Music className="w-5 h-5 text-indigo-400" />
+                </div>
+                <p className="font-bold text-sm mb-0.5">Playlists</p>
+                <p className="text-xs text-muted-foreground">Personalise for bookings</p>
+              </Link>
+            )}
+
+            {isArtist && (
               <Link to="/wallet" className="group p-4 rounded-2xl border border-border/40 bg-card/30 hover:border-green-500/40 hover:bg-green-500/5 transition-all">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/30 to-emerald-500/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                   <Wallet className="w-5 h-5 text-green-500" />

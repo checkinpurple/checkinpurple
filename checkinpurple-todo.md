@@ -30,7 +30,7 @@
 ### 🎤 Artist
 - [ ] **Photo gallery — followers only gate** — check `isFollowing` before rendering gallery; show "Follow to view" if not.
 - [ ] **Gallery upload in ArtistSettings** — Supabase Storage bucket `artist-gallery`, store URLs in `gallery_images text[]` on users.
-- [ ] **Personalised playlists** — artist tags a playlist to a specific fan/group. Fan sees it after following.
+- [x] **Personalised playlists** — artist tags a playlist to a specific fan/group. Fan sees it after following.
 - [ ] **Booking availability calendar** — date-picker instead of free-text; artist marks slots, fan selects when booking.
 - [ ] **Saved streams library tab** — "Past Streams" tab on Artist Dashboard. Route and server handler already built (`savedStreams.ts`).
 
