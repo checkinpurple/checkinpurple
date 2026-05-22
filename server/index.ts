@@ -217,6 +217,17 @@ export function createServer() {
     }
   });
 
+
+  app.delete("/api/account", async (req, res) => {
+    try {
+      if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+      await supabase.from("users").delete().eq("id", req.user.id);
+      return res.json({ success: true });
+    } catch {
+      return res.status(500).json({ error: "Failed to delete account" });
+    }
+  });
+
   // Legacy routes
   app.get("/api/ping", (_req, res) => {
     const ping = process.env.PING_MESSAGE ?? "ping";

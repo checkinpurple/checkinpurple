@@ -122,8 +122,8 @@ function getNavLinks(
   // Coins & account - available to all
   links.push(
     { to: "/buy-coins", icon: <Coins className="w-4 h-4" />, label: "Buy Coins", section: "Account" },
-    { to: "/tiers", icon: <Crown className="w-4 h-4" />, label: "Plans", section: "Account" },
   );
+  if (!isAdmin) links.push({ to: "/tiers", icon: <Crown className="w-4 h-4" />, label: "Plans", section: "Account" });
 
   // Deduplicate by path
   return links.filter((l, i, arr) => arr.findIndex(x => x.to === l.to) === i);

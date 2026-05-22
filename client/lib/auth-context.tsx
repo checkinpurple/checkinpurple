@@ -10,6 +10,7 @@ interface AuthContextType {
   isImpersonating: boolean;
   signUp: (
     email: string,
+    phone: string,
     password: string,
     username: string,
     activeProfile: ProfileType,
@@ -80,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: authUser.id,
         email: authUser.email || "",
         username,
+        phone: metadata.phone || null,
         role,
         created_at: authUser.created_at || new Date().toISOString(),
       }, { onConflict: "id" });
@@ -136,6 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (
     email: string,
+    phone: string,
     password: string,
     username: string,
     activeProfile: ProfileType,
@@ -152,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         options: {
-          data: { username, role: activeProfile, profiles, tier },
+          data: { username, phone, role: activeProfile, profiles, tier },
         },
       });
 

@@ -329,8 +329,22 @@ export default function Dashboard() {
             )}
           </div>
 
+          <div className="pt-2">
+            <button
+              onClick={async () => {
+                if (!confirm("Are you sure you want to delete your account? This cannot be undone.")) return;
+                await fetch("/api/account", { method: "DELETE", headers: { Authorization: `Bearer ${user.id}` } });
+                await signOut();
+                navigate("/");
+              }}
+              className="text-xs text-red-400 hover:underline"
+            >
+              Delete Account
+            </button>
+          </div>
+
           {/* Upgrade banner */}
-          {availableProfiles.length === 1 && !isAdmin && (
+          {availableProfiles.length === 1 && !isAdmin && user.tier !== "Premium" && (
             <div className="p-4 rounded-2xl border border-dashed border-primary/30 bg-primary/5 flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-3">
                 <Zap className="w-7 h-7 text-primary flex-shrink-0" />

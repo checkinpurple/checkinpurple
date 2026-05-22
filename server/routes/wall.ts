@@ -5,6 +5,12 @@ type WallType = "reel" | "snippet" | "promo" | "catalogue" | "stream" | "gig";
 
 export const getWallFeed: RequestHandler = async (_req, res) => {
   try {
+    const wallRes = await supabase
+      .from("wall_posts")
+      .select("id,user_id,type,caption,media_url,thumbnail_url,metadata,created_at")
+      .order("created_at", { ascending: false })
+      .limit(40);
+
     const [streamsRes, productsRes, usersRes] = await Promise.all([
       supabase
         .from("streams")
@@ -25,6 +31,27 @@ export const getWallFeed: RequestHandler = async (_req, res) => {
     ]);
 
     const users = usersRes.data || [];
+    if ((wallRes.data || []).length > 0) {
+      const mapped = (wallRes.data || []).map((p: any) => {
+        const author = users.find((u: any) => u.id === p.user_id);
+        return {
+          id: p.id,
+          type: p.type,
+          author: author?.username || "user",
+          authorRole: author?.role || "fan",
+          authorAvatar: author?.avatar_url || undefined,
+          verified: Boolean(author?.is_verified),
+          timestamp: new Date(p.created_at).toLocaleString("en-ZA"),
+          caption: p.caption || undefined,
+          mediaUrl: p.media_url || undefined,
+          thumbnailUrl: p.thumbnail_url || undefined,
+          ...((p.metadata as any) || {}),
+          likes: 0,
+          comments: 0,
+        };
+      });
+      return res.json({ success: true, posts: mapped });
+    }
     const userMap = new Map(users.map((u) => [u.id, u]));
 
     const streamPosts = (streamsRes.data || []).map((stream) => {
