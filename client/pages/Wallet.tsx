@@ -26,7 +26,6 @@ interface WalletData {
 
 const COIN_FACE_ZAR = 0.10;
 const COIN_TO_ZAR = 0.07;
-const COIN_TO_USD_FIXED = 0.004;
 const MIN_PAYOUT_ZAR = 200;
 const MIN_PAYOUT_USD = 11;
 
@@ -138,7 +137,7 @@ export default function Wallet() {
         body: JSON.stringify({
           method,
           currency,
-          amount: currency === "ZAR" ? wallet.zarValue : wallet.zarValue * (COIN_TO_USD / COIN_TO_ZAR),
+          amount: currency === "ZAR" ? wallet.zarValue : wallet.zarValue / zarRate,
           coins: wallet.availableCoins,
           paypalEmail: method === "paypal" ? paypalEmail : undefined,
           bankName: method === "bank" ? bankName : undefined,
@@ -375,7 +374,7 @@ export default function Wallet() {
               >
                 {withdrawStatus === "loading"
                   ? "Submitting..."
-                  : `Request ${currency === "ZAR" ? `R${wallet?.zarValue.toFixed(2)}` : `$${(((wallet?.zarValue || 0) * COIN_TO_USD) / COIN_TO_ZAR).toFixed(2)}`} via ${method === "paypal" ? "PayPal" : "Bank Transfer"}`}
+                  : `Request ${currency === "ZAR" ? `R${wallet?.zarValue.toFixed(2)}` : `$${(((wallet?.zarValue || 0) / zarRate)).toFixed(2)}`} via ${method === "paypal" ? "PayPal" : "Bank Transfer"}`}
               </button>
             )}
           </div>

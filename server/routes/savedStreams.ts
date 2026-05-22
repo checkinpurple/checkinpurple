@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase } from "../supabase";
+import { supabase } from "../lib/supabase";
 
 export const getSavedStreams = async (req: Request, res: Response) => {
   try {
