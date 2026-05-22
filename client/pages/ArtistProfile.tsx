@@ -371,22 +371,31 @@ export default function ArtistProfile() {
 
         {tab === "gallery" && (
           <div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {galleryImages.map((src, i) => (
-                <button
-                  key={i}
-                  onClick={() => setLightboxIdx(i)}
-                  className="aspect-square rounded-xl overflow-hidden bg-card border border-border/40 hover:opacity-90 transition-opacity"
-                >
-                  <img src={src} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-            {galleryImages.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground text-sm">
-                <Camera className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                No gallery images yet.
+            {(!isFollowing && !isAdmin && user?.id !== artist.id) ? (
+              <div className="text-center py-12 text-muted-foreground text-sm rounded-xl border border-border/40 bg-card/30">
+                <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                Follow to view gallery.
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {galleryImages.map((src, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setLightboxIdx(i)}
+                      className="aspect-square rounded-xl overflow-hidden bg-card border border-border/40 hover:opacity-90 transition-opacity"
+                    >
+                      <img src={src} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+                {galleryImages.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground text-sm">
+                    <Camera className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    No gallery images yet.
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
