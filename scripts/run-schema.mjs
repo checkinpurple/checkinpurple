@@ -9,7 +9,7 @@ if (!sqlPath) {
   process.exit(1);
 }
 
-const connectionString =
+let connectionString =
   process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL;
 
 if (!connectionString) {
@@ -17,11 +17,17 @@ if (!connectionString) {
   process.exit(1);
 }
 
+// Extract host for SNI (Supavisor routes the tenant by TLS SNI), then strip
+// sslmode so our explicit ssl options take effect instead of verify-full.
+const hostMatch = connectionString.match(/@([^:/?]+)/);
+const servername = hostMatch ? hostMatch[1] : undefined;
+connectionString = connectionString.replace(/[?&]sslmode=[^&]*/g, "");
+
 const sql = readFileSync(sqlPath, "utf8");
 
 const client = new Client({
   connectionString,
-  ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: false, servername },
 });
 
 try {
