@@ -212,11 +212,14 @@ export default function Index() {
       {/* Footer */}
       <footer className="border-t border-border/40 py-6 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3 text-muted-foreground text-xs">
-          <div>© 2025 CheckinPurple. All rights reserved.</div>
+<div className="space-y-1">
+            <div>© 2025 CheckinPurple. All rights reserved.</div>
+            <div className="text-xs opacity-60">POPIA compliant · South Africa</div>
+          </div>
           <div className="flex gap-5">
-            <button className="hover:text-foreground transition-colors">Privacy</button>
-            <button className="hover:text-foreground transition-colors">Terms</button>
-            <button className="hover:text-foreground transition-colors">Contact</button>
+<Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+<Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+<a href="mailto:legal@checkinpurple.com" className="hover:text-foreground transition-colors">Contact</a>
           </div>
         </div>
       </footer>

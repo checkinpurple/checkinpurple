@@ -8,6 +8,7 @@ import {
   ShoppingBag, TrendingUp, Image, X, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import AgeGate from "@/components/AgeGate";
 import ArtistCollabs from "@/components/ArtistCollabs";
 import OGMeta from "@/components/OGMeta";
 
@@ -69,6 +70,7 @@ export default function ArtistProfile() {
   const [rsvping, setRsvping] = useState<string | null>(null);
   const [tab, setTab] = useState<"about" | "gigs" | "gallery" | "collabs" | "book">("about");
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   // Booking state
   const [bookingDate, setBookingDate] = useState("");
@@ -87,7 +89,15 @@ export default function ArtistProfile() {
   const [dealLoading, setDealLoading] = useState(false);
   const [dealSuccess, setDealSuccess] = useState(false);
 
-  const galleryImages: string[] = artist?.gallery_images || [];
+  // Mock gallery images (replace with API call)
+  const galleryImages = artist?.gallery_images || [
+    "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",
+    "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400",
+    "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400",
+    "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400",
+    "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400",
+    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400",
+  ];
 
   useEffect(() => {
     if (!username) return;
@@ -195,6 +205,17 @@ export default function ArtistProfile() {
     { id: "collabs", label: "Collabs" },
     ...(artist.booking_available ? [{ id: "book", label: "Book" }] : []),
   ] as { id: typeof tab; label: string }[];
+
+  // Show age gate for explicit artists until confirmed
+  if (artist.explicit_content && !ageConfirmed) {
+    return (
+      <AgeGate
+        contentLabel={`${artist.username}'s profile`}
+        onConfirm={() => setAgeConfirmed(true)}
+        onDecline={() => window.history.back()}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

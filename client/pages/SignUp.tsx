@@ -69,6 +69,7 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [confirmedAge, setConfirmedAge] = useState(false);
 
   useEffect(() => {
     if (user) navigate("/dashboard");
@@ -108,6 +109,9 @@ export default function SignUp() {
     }
     if (formData.username.length < 3) {
       setError("Username must be at least 3 characters"); return;
+    }
+    if (!confirmedAge) {
+      setError("Please confirm you are 18 years or older"); return;
     }
     if (!acceptedTerms) {
       setError("Please accept the Terms and Conditions"); return;
@@ -325,13 +329,28 @@ export default function SignUp() {
             <div className="flex items-start gap-3">
               <input
                 type="checkbox"
+                id="age"
+                type="checkbox"
+                checked={confirmedAge}
+                onChange={e => setConfirmedAge(e.target.checked)}
+                className="w-4 h-4 mt-0.5 flex-shrink-0"
+              />
+              <label htmlFor="age" className="text-sm text-muted-foreground leading-relaxed">
+                I confirm I am <strong className="text-foreground">18 years or older</strong>.
+              </label>
+            </div>
+            <div className="flex items-start gap-3">
+              <input
                 id="terms"
                 checked={acceptedTerms}
                 onChange={e => setAcceptedTerms(e.target.checked)}
                 className="mt-1"
               />
               <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed">
-                I agree to the <span className="text-primary underline cursor-pointer">Terms and Conditions</span>.
+                I agree to the{" "}
+                <a href="/terms" target="_blank" rel="noreferrer" className="text-primary underline">Terms and Conditions</a>
+                {" "}and{" "}
+                <a href="/privacy" target="_blank" rel="noreferrer" className="text-primary underline">Privacy Policy</a>.
                 {profiles.includes("artist") && " I will only stream music I own or have rights to."}
                 {profiles.includes("merchant") && " I will only sell legitimate products through the store."}
               </label>
