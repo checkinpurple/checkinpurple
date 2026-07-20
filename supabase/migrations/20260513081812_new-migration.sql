@@ -1,7 +1,7 @@
 
 
 -- Note: JWT secret must be configured in the Supabase Project Settings (Settings → API → JWT secret). Do not set it via migrations.
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   email VARCHAR NOT NULL,
   username VARCHAR UNIQUE NOT NULL,
@@ -22,7 +22,7 @@ CREATE POLICY "Users can update own profile" ON users
   FOR UPDATE USING (auth.uid() = id);
 
 -- Streams table
-CREATE TABLE streams (
+CREATE TABLE IF NOT EXISTS streams (
   id VARCHAR PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title VARCHAR NOT NULL,
@@ -56,7 +56,7 @@ CREATE POLICY "Artists can delete own streams" ON streams
   FOR DELETE USING (auth.uid() = user_id);
 
 -- Tracks table (for future use)
-CREATE TABLE tracks (
+CREATE TABLE IF NOT EXISTS tracks (
   id VARCHAR PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title VARCHAR NOT NULL,
@@ -64,15 +64,16 @@ CREATE TABLE tracks (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable RLS on tracks
 ALTER TABLE tracks ENABLE ROW LEVEL SECURITY;
 
--- Artists can manage their own tracks
+-- Ensure `user_id` column exists (some databases may have an older `tracks` table)
+ALTER TABLE tracks ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;
+
 CREATE POLICY "Artists can manage own tracks" ON tracks
   FOR ALL USING (auth.uid() = user_id);
 
 -- Follows table (social feature)
-CREATE TABLE follows (
+CREATE TABLE IF NOT EXISTS follows (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   follower_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   followed_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -96,7 +97,7 @@ CREATE POLICY "Users can unfollow" ON follows
   FOR DELETE USING (auth.uid() = follower_id);
 
 -- Likes table (social feature)
-CREATE TABLE likes (
+CREATE TABLE IF NOT EXISTS likes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   stream_id VARCHAR NOT NULL REFERENCES streams(id) ON DELETE CASCADE,
@@ -120,7 +121,7 @@ CREATE POLICY "Users can unlike" ON likes
   FOR DELETE USING (auth.uid() = user_id);
 
 -- Comments table (social feature)
-CREATE TABLE comments (
+CREATE TABLE IF NOT EXISTS comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   stream_id VARCHAR NOT NULL REFERENCES streams(id) ON DELETE CASCADE,
@@ -155,7 +156,7 @@ CREATE POLICY "Users can delete own comments" ON comments
   FOR DELETE USING (auth.uid() = user_id);
 
 -- Analytics events table
-CREATE TABLE analytics_events (
+CREATE TABLE IF NOT EXISTS analytics_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   event_type VARCHAR NOT NULL,
@@ -175,7 +176,7 @@ CREATE POLICY "Users can view own analytics" ON analytics_events
   FOR SELECT USING (auth.uid() = user_id);
 
 -- Subscription tiers table
-CREATE TABLE subscription_tiers (
+CREATE TABLE IF NOT EXISTS subscription_tiers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR NOT NULL UNIQUE,
   description TEXT,
@@ -193,7 +194,7 @@ CREATE POLICY "Anyone can view subscription tiers" ON subscription_tiers
   FOR SELECT USING (true);
 
 -- User subscriptions table
-CREATE TABLE user_subscriptions (
+CREATE TABLE IF NOT EXISTS user_subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   tier_id UUID NOT NULL REFERENCES subscription_tiers(id) ON DELETE CASCADE,
@@ -216,7 +217,7 @@ CREATE POLICY "Users can manage own subscriptions" ON user_subscriptions
   FOR ALL USING (auth.uid() = user_id);
 
 -- Payment methods table
-CREATE TABLE payment_methods (
+CREATE TABLE IF NOT EXISTS payment_methods (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR NOT NULL,
   type VARCHAR CHECK (type IN ('paypal', 'fatpay', 'stripe', 'other')) NOT NULL,
@@ -233,7 +234,7 @@ CREATE POLICY "Anyone can view active payment methods" ON payment_methods
   FOR SELECT USING (is_active = true);
 
 -- Coins store table
-CREATE TABLE coin_packages (
+CREATE TABLE IF NOT EXISTS coin_packages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR NOT NULL,
   description TEXT,
@@ -251,7 +252,7 @@ CREATE POLICY "Anyone can view coin packages" ON coin_packages
   FOR SELECT USING (is_active = true);
 
 -- User coin balance table
-CREATE TABLE user_coins (
+CREATE TABLE IF NOT EXISTS user_coins (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   balance INTEGER NOT NULL DEFAULT 0,
@@ -310,7 +311,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Coin transactions table
-CREATE TABLE coin_transactions (
+CREATE TABLE IF NOT EXISTS coin_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   transaction_type VARCHAR CHECK (transaction_type IN ('purchase', 'tip', 'bonus', 'refund')) NOT NULL,
@@ -332,7 +333,7 @@ CREATE POLICY "Service role can insert transactions" ON coin_transactions
   FOR INSERT WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
 
 -- Scheduled releases table (for Standard tier)
-CREATE TABLE scheduled_releases (
+CREATE TABLE IF NOT EXISTS scheduled_releases (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title VARCHAR NOT NULL,
@@ -358,7 +359,7 @@ CREATE POLICY "Anyone can view scheduled releases" ON scheduled_releases
   FOR SELECT USING (status = 'scheduled');
 
 -- Bookings table for scheduled releases
-CREATE TABLE release_bookings (
+CREATE TABLE IF NOT EXISTS release_bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   release_id UUID NOT NULL REFERENCES scheduled_releases(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -394,7 +395,7 @@ CREATE POLICY "Users can cancel own bookings" ON release_bookings
   FOR UPDATE USING (auth.uid() = user_id);
 
 -- Tips table
-CREATE TABLE tips (
+CREATE TABLE IF NOT EXISTS tips (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   from_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   to_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
