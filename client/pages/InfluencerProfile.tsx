@@ -87,7 +87,7 @@ export default function InfluencerPublicProfile() {
       if (user && user.id !== data.id) {
         const { data: f } = await supabase
           .from("follows").select("id")
-          .eq("follower_id", user.id).eq("following_id", data.id).single();
+          .eq("follower_id", user.id).eq("followed_id", data.id).single();
         setIsFollowing(!!f);
       }
     } catch {}
@@ -98,10 +98,10 @@ export default function InfluencerPublicProfile() {
     if (!user) { navigate("/signin"); return; }
     if (!influencer) return;
     if (isFollowing) {
-      await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", influencer.id);
+      await supabase.from("follows").delete().eq("follower_id", user.id).eq("followed_id", influencer.id);
       setIsFollowing(false); setFollowerCount(c => Math.max(0, c - 1));
     } else {
-      await supabase.from("follows").insert({ follower_id: user.id, following_id: influencer.id });
+      await supabase.from("follows").insert({ follower_id: user.id, followed_id: influencer.id });
       setIsFollowing(true); setFollowerCount(c => c + 1);
     }
   };

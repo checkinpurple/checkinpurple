@@ -123,7 +123,11 @@ export default function ArtistProfile() {
     if (!user) { navigate("/signin"); return; }
     try {
       const method = isFollowing ? "DELETE" : "POST";
-      await fetch(`/api/social/follow/${artist?.id}`, { method, headers: { Authorization: `Bearer ${user.id}` } });
+      await fetch("/api/social/follow", {
+        method,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
+        body: JSON.stringify({ followed_id: artist?.id }),
+      });
       setIsFollowing(!isFollowing);
       setFollowerCount(c => isFollowing ? c - 1 : c + 1);
     } catch {}

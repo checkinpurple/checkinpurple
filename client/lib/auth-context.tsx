@@ -190,7 +190,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data.user) {
-        setTimeout(() => fetchUserProfile(data.user!.id), 1000);
+        await ensureUserRow(data.user);
+        await fetchUserProfile(data.user.id);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sign up failed';

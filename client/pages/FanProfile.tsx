@@ -72,7 +72,7 @@ export default function FanProfile() {
       // Fetch artists this fan follows
       const { data: followData } = await supabase
         .from("follows")
-        .select("following_id, users!follows_following_id_fkey(id, username, avatar_url)")
+        .select("followed_id, users!follows_followed_id_fkey(id, username, avatar_url)")
         .eq("follower_id", data.id)
         .limit(20);
 
@@ -90,7 +90,7 @@ export default function FanProfile() {
           .from("follows")
           .select("id")
           .eq("follower_id", user.id)
-          .eq("following_id", data.id)
+          .eq("followed_id", data.id)
           .single();
         setIsFollowing(!!myFollow);
       }
@@ -115,11 +115,11 @@ export default function FanProfile() {
     if (!fan) return;
     try {
       if (isFollowing) {
-        await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", fan.id);
+        await supabase.from("follows").delete().eq("follower_id", user.id).eq("followed_id", fan.id);
         setIsFollowing(false);
         setFollowerCount(c => Math.max(0, c - 1));
       } else {
-        await supabase.from("follows").insert({ follower_id: user.id, following_id: fan.id });
+        await supabase.from("follows").insert({ follower_id: user.id, followed_id: fan.id });
         setIsFollowing(true);
         setFollowerCount(c => c + 1);
       }
