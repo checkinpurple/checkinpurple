@@ -8,6 +8,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth-context";
 
 import Index from "./pages/Index";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import POPIABanner from "./components/POPIABanner";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -99,6 +102,8 @@ export default function App() {
               <Route path="/signin" element={<SignIn />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/store" element={<Store />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
               <Route path="/parties" element={<ListeningParties />} />
               <Route path="/artist/:username" element={<ArtistProfile />} />
               <Route path="/fan/:username" element={<FanProfile />} />
@@ -137,6 +142,7 @@ export default function App() {
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+          <POPIABanner />
           </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>
