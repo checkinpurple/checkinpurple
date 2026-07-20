@@ -328,7 +328,6 @@ export default function SignUp() {
 
             <div className="flex items-start gap-3">
               <input
-                type="checkbox"
                 id="age"
                 type="checkbox"
                 checked={confirmedAge}

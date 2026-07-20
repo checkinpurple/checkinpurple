@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import { supabase } from "../lib/supabase";
+import { notifyBookingRequest, notifyBookingAccepted, notifyBookingDeclined } from "./notifications";
 import { BookingRequestStatus, ProfileType } from "@shared/api";
 
 async function userHasProfile(userId: string, profileType: ProfileType): Promise<boolean> {
@@ -43,7 +44,7 @@ export const upsertArtistProfile: RequestHandler = async (req, res) => {
 
     // Notify artist
     try {
-      const fanUsername = (data as any)?.fan?.username || req.user?.username || "Someone";
+      const fanUsername = (data as any)?.fan?.username || (req.user as any)?.username || "Someone";
       if (data?.artist_id) {
         await notifyBookingRequest(data.artist_id, fanUsername);
       }

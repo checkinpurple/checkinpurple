@@ -20,6 +20,7 @@ interface Product {
   stock: number;
   event_date?: string;
   event_location?: string;
+  merchant_id?: string;
 }
 
 const AMAZON_ASSOCIATE_TAG = import.meta.env.VITE_AMAZON_ASSOCIATE_TAG as string | undefined;

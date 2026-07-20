@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import { supabase } from "../lib/supabase";
+import { notifyCoinTip } from "./notifications";
 import { logCoinRiskEvent } from "../lib/coin-risk";
 import {
   SubscriptionTier,

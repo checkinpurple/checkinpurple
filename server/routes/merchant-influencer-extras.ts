@@ -93,14 +93,16 @@ export const setDealStatus: RequestHandler = async (req, res) => {
 
     // Notify artist that deal was accepted
     if (deal.artist_id) {
-      await supabase.from("notifications").insert({
-        user_id: deal.artist_id,
-        type: "deal_accepted",
-        title: "Promotion deal accepted!",
-        message: `@${inf?.username || "Influencer"} accepted your promotion deal`,
-        action_url: "/influencer",
-        read: false,
-      }).catch(() => {});
+      try {
+        await supabase.from("notifications").insert({
+          user_id: deal.artist_id,
+          type: "deal_accepted",
+          title: "Promotion deal accepted!",
+          message: `@${inf?.username || "Influencer"} accepted your promotion deal`,
+          action_url: "/influencer",
+          read: false,
+        });
+      } catch {}
     }
   }
 

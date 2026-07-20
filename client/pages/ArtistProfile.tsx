@@ -32,6 +32,8 @@ interface ArtistProfile {
   streaming_spotify?: string;
   streaming_apple?: string;
   streaming_audiomack?: string;
+  streaming_youtube_music?: string;
+  streaming_deezer?: string;
   skills?: string[];
   is_verified?: boolean;
   follower_count?: number;

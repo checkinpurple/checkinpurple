@@ -5,6 +5,7 @@ import {
   ArrowLeft, Check, DollarSign, Coins, Instagram,
   Twitter, Globe, Info, Youtube, Facebook, Headphones,
   Podcast, Palette, Volume2, Sliders
+  , Camera
 } from "lucide-react";
 
 const SKILLS = [
@@ -63,6 +64,7 @@ export default function ArtistSettings() {
     streaming_audiomack: "",
     streaming_youtube_music: "",
     streaming_deezer: "",
+    gallery_images: [] as string[],
     skills: [] as string[],
   });
 

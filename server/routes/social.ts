@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import { supabase } from "../lib/supabase";
 import { Follow, Like, Comment, FollowRequest, LikeRequest, CommentRequest } from "@shared/api";
+import { notifyNewFollower } from "./notifications";
 
 // Get follows for a user
 export const getFollows: RequestHandler = async (req, res) => {
@@ -66,8 +67,8 @@ export const unfollowUser: RequestHandler = async (req, res) => {
     if (error) throw error;
     // Notify the person being followed
     try {
-      const { data: follower } = await supabase.from("users").select("username").eq("id", userId).single();
-      await notifyNewFollower(followingId, follower?.username || "Someone");
+      const { data: follower } = await supabase.from("users").select("username").eq("id", follower_id).single();
+      await notifyNewFollower(followed_id, follower?.username || "Someone");
     } catch {}
 
     res.json({ success: true });
