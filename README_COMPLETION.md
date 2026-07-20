@@ -61,7 +61,7 @@ You now have a **production-ready live streaming backend** fully integrated with
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│          SOUNDSYNC PLATFORM                         │
+│          CHECKINPURPLE PLATFORM                      │
 ├─────────────────────────────────────────────────────┤
 │                                                     │
 │  React Frontend ─────────────────────┐             │
@@ -121,7 +121,7 @@ All endpoints are **implemented, tested, and ready to use**.
 
 1. **Get Supabase credentials** (5 min)
    - Sign up at https://supabase.com
-   - Create project "soundsync"
+   - Create project "checkinpurple"
    - Copy URL + Anon Key
 
 2. **Get Agora credentials** (5 min)

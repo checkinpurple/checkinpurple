@@ -1,3 +1,6 @@
+# checkinpurple Setup Script - Supabase & Agora
+
+echo "🎵 checkinpurple Production Setup"
 #!/bin/bash
 # SoundSync Setup Script - Supabase & Agora
 
@@ -11,7 +14,7 @@ echo "--------------------------------"
 echo "1. Go to https://supabase.com"
 echo "2. Sign up with email/password (FREE)"
 echo "3. Create a new project:"
-echo "   - Project Name: soundsync"
+echo "   - Project Name: checkinpurple"
 echo "   - Database Password: (choose secure password)"
 echo "   - Region: (select closest to you)"
 echo "4. Wait 2-3 minutes for project creation"
@@ -32,7 +35,7 @@ echo "----------------------------"
 echo "1. Go to https://console.agora.io"
 echo "2. Sign up (FREE - 10,000 minutes/month)"
 echo "3. Create a new project:"
-echo "   - Project Name: soundsync"
+echo "   - Project Name: checkinpurple"
 echo "   - Use case: Interactive Live Streaming"
 echo ""
 echo "4. Get your credentials:"

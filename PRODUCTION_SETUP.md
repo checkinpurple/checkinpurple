@@ -1,4 +1,4 @@
-# SoundSync Production Setup Guide
+# checkinpurple Production Setup Guide
 
 ## 1. Set Up Supabase
 
@@ -6,7 +6,7 @@
 1. Go to [supabase.com](https://supabase.com) and sign up (free)
 2. Click "New Project"
 3. Fill in project details:
-   - Name: `soundsync`
+   - Name: `checkinpurple`
    - Database Password: Choose a strong password
    - Region: Select closest to your users
 4. Wait for project creation (2-3 minutes)

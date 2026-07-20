@@ -1,4 +1,4 @@
-# ✅ SoundSync Production Setup Checklist
+# ✅ checkinpurple Production Setup Checklist
 
 ## Phase 1: Supabase Setup
 
@@ -7,7 +7,7 @@
 - [ ] Click "Sign Up" (free account)
 - [ ] Click "New Project"
 - [ ] Fill in details:
-  - **Project Name:** soundsync
+  - **Project Name:** checkinpurple
   - **Database Password:** (choose strong password)
   - **Region:** Select closest to your location
   - **Pricing Plan:** Free

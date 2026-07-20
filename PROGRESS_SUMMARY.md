@@ -67,7 +67,7 @@ Everything is coded and ready. You just need your credentials.
 
 ```
 Go to: https://supabase.com
-Sign up → Create project "soundsync"
+Sign up → Create project "checkinpurple"
 Copy from Settings → API:
   - VITE_SUPABASE_URL
   - VITE_SUPABASE_ANON_KEY

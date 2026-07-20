@@ -19,7 +19,7 @@
 1. **Go to**: https://supabase.com
 2. **Click**: "Start your project" or Sign Up
 3. **Create project** with these settings:
-   - **Name**: `soundsync` (or your choice)
+  - **Name**: `checkinpurple` (or your choice)
    - **Region**: Closest to you (US East for USA)
    - **Password**: Save this! (or auto-generated is fine)
 4. **Wait** for project to initialize (~2 min)
@@ -37,7 +37,7 @@
 1. **Go to**: https://console.agora.io
 2. **Sign Up** with email
 3. **Create new project** with these settings:
-   - **Project Name**: `soundsync`
+  - **Project Name**: `checkinpurple`
    - **Product/Service**: "Interactive Live Streaming"
    - **Scenario**: "Live Streaming"
 4. **Copy credentials** from project dashboard:

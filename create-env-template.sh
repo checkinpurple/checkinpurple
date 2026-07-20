@@ -6,7 +6,7 @@
 
 cat > .env.local.template << 'EOF'
 # ========================================
-# SoundSync Environment Variables
+# checkinpurple Environment Variables
 # ========================================
 
 # SUPABASE CREDENTIALS
@@ -24,7 +24,7 @@ VITE_SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
 
 # AGORA CREDENTIALS
 # Get from: https://console.agora.io
-#   1. Create project (soundsync)
+#   1. Create project (checkinpurple)
 #   2. Go to Project Management → your project
 #   3. Copy "App ID"
 AGORA_APP_ID=abc123def456ghi789jklmnopqrst

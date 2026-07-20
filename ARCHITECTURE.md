@@ -1,8 +1,8 @@
-# SoundSync - Architecture & Setup Guide
+# checkinpurple - Architecture & Setup Guide
 
 ## Overview
 
-SoundSync is a real-time music streaming platform where artists can broadcast from their phone storage, and listeners can enjoy live music without the ability to record or download. Built with zero upfront costs using free-tier services.
+checkinpurple is a real-time music streaming platform where artists can broadcast from their phone storage, and listeners can enjoy live music without the ability to record or download. Built with zero upfront costs using free-tier services.
 
 ## Tech Stack
 

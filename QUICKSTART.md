@@ -1,4 +1,4 @@
-# SoundSync - Quick Start Guide
+# checkinpurple - Quick Start Guide
 
 Get your streaming platform up and running in 5 minutes.
 
@@ -22,7 +22,7 @@ A real-time music streaming app where:
 ### Step 1: Clone & Install (1 min)
 ```bash
 git clone <repo-url>
-cd soundsync
+cd checkinpurple
 pnpm install
 ```
 

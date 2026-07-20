@@ -1,4 +1,4 @@
-# SoundSync API Specification
+# checkinpurple API Specification
 
 ## Overview
 

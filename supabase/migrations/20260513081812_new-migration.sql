@@ -1,10 +1,6 @@
--- SoundSync Database Schema
--- Run this in your Supabase SQL Editor
 
--- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
 
--- Users table (extends Supabase auth.users)
+-- Note: JWT secret must be configured in the Supabase Project Settings (Settings → API → JWT secret). Do not set it via migrations.
 CREATE TABLE users (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   email VARCHAR NOT NULL,
