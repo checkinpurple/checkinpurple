@@ -34,10 +34,12 @@ import PostGig from "./pages/PostGig";
 import Wall from "./pages/Wall";
 import FanProfile from "./pages/FanProfile";
 import InfluencerProfile from "./pages/InfluencerProfile";
+import MerchantProfile from "./pages/MerchantProfile";
 import PastStreams from "./pages/PastStreams";
 import InfluencerSettings from "./pages/InfluencerSettings";
 import NotFound from "./pages/NotFound";
 import PlaylistsPage from "./pages/Playlists";
+import Messages from "./pages/Messages";
 
 const ADMIN_EMAIL = "checkinpurple@gmail.com";
 const queryClient = new QueryClient();
@@ -108,6 +110,7 @@ export default function App() {
               <Route path="/artist/:username" element={<ArtistProfile />} />
               <Route path="/fan/:username" element={<FanProfile />} />
               <Route path="/influencer/:username" element={<InfluencerProfile />} />
+              <Route path="/merchant/:username" element={<MerchantProfile />} />
               <Route path="/influencer-settings" element={<ProtectedRoute requiredRole="influencer"><InfluencerSettings /></ProtectedRoute>} />
               <Route path="/past-streams" element={<ProtectedRoute><PastStreams /></ProtectedRoute>} />
 
@@ -118,6 +121,7 @@ export default function App() {
               <Route path="/fan" element={<ProtectedRoute><Dashboard viewAs="fan" /></ProtectedRoute>} />
               <Route path="/wall" element={<ProtectedRoute><Wall /></ProtectedRoute>} />
               <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
+              <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
 
               {/* Artist */}
               <Route path="/playlists" element={<ProtectedRoute requiredRole="artist"><PlaylistsPage /></ProtectedRoute>} />

@@ -5,7 +5,7 @@ import { supabase, DatabaseStream } from "../lib/supabase";
 
 export const createStream: RequestHandler = async (req, res) => {
   try {
-    const { userId, title } = req.body;
+    const { userId, title, genre } = req.body;
 
     if (!userId || !title) {
       return res.status(400).json({ error: "userId and title required" });
@@ -24,6 +24,8 @@ export const createStream: RequestHandler = async (req, res) => {
       livepeer_playback_id: req.body.playbackId || null,
     };
 
+    const wallMetadata = { isLive: true, viewerCount: 0, genre: genre || 'Various' };
+
     const { data, error } = await supabase
       .from('streams')
       .insert(streamData)
@@ -39,7 +41,7 @@ export const createStream: RequestHandler = async (req, res) => {
       user_id: userId,
       type: "stream",
       caption: title,
-      metadata: { isLive: true, viewerCount: 0 },
+      metadata: wallMetadata,
     });
 
     res.json({
@@ -86,8 +88,35 @@ export const updateListenerCount: RequestHandler = async (req, res) => {
 
 export const listActiveStreams: RequestHandler = async (_req, res) => {
   try {
-    const { data, error } = await supabase.from('streams').select('id, title, listener_count, started_at').eq('status', 'live').order('started_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('streams')
+      .select('id, user_id, title, listener_count, started_at, livepeer_playback_id')
+      .eq('status', 'live')
+      .order('started_at', { ascending: false });
     if (error) return res.status(500).json({ error: "Failed to list streams" });
-    res.json({ success: true, streams: data || [], total: data?.length || 0 });
+
+    const userIds = Array.from(new Set((data || []).map((stream: any) => stream.user_id).filter(Boolean)));
+    const { data: users } = userIds.length
+      ? await supabase.from('users').select('id, username, avatar_url').in('id', userIds)
+      : { data: [] };
+    const userMap = new Map((users || []).map((user: any) => [user.id, user]));
+
+    res.json({
+      success: true,
+      streams: (data || []).map((stream: any) => {
+        const artist = userMap.get(stream.user_id);
+        return {
+          id: stream.id,
+          userId: stream.user_id,
+          title: stream.title,
+          listenerCount: stream.listener_count,
+          startedAt: stream.started_at,
+          playbackId: stream.livepeer_playback_id,
+          username: artist?.username,
+          avatar_url: artist?.avatar_url,
+        };
+      }),
+      total: data?.length || 0,
+    });
   } catch { res.status(500).json({ error: "Failed to list streams" }); }
 };

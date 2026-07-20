@@ -4,7 +4,7 @@ import {
   Radio, LayoutDashboard, Mic, Music, ShoppingBag, Star,
   Users, Wallet, Settings, LogOut, Menu, X, Bell,
   Coins, BookOpen, Calendar, TrendingUp, Camera, Store,
-  Headphones, Crown, Send, MapPin, ShieldAlert
+  Headphones, Crown, Send, MapPin, ShieldAlert, MessageCircle
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import type { ProfileType } from "@shared/api";
@@ -27,12 +27,11 @@ function getNavLinks(
   pendingBookings: number
 ): SidebarLink[] {
   const links: SidebarLink[] = [];
-  const has = (p: ProfileType) => profiles.includes(p);
-  const hasArtist = isAdmin || has("artist") || has("artist_fan");
-  const hasFan = isAdmin || has("fan") || has("artist_fan");
-  const hasInfluencer = isAdmin || has("influencer");
-  const hasMerchant = isAdmin || has("merchant");
-  const isArtist = hasArtist;
+  const profileContext = activeProfile;
+  const hasArtist = isAdmin || profileContext === "artist" || profileContext === "artist_fan";
+  const hasFan = isAdmin || profileContext === "fan" || profileContext === "artist_fan";
+  const hasInfluencer = isAdmin || profileContext === "influencer";
+  const hasMerchant = isAdmin || profileContext === "merchant";
 
   // Admin gets Admin Panel as home
   if (isAdmin) {
@@ -111,22 +110,24 @@ function getNavLinks(
     );
   }
 
-  // Discovery features - available to ALL profiles
-  links.push(
-    { to: "/listen", icon: <Headphones className="w-4 h-4" />, label: "Discover Music", section: "Discover" },
-    { to: "/parties", icon: <Users className="w-4 h-4" />, label: "Listening Parties", section: "Discover" },
-    { to: "/store", icon: <Store className="w-4 h-4" />, label: "Store", section: "Discover" },
-  );
+  // Discovery features are grouped by the active profile so the sidebar does not mix unrelated tools.
+  if (hasFan || hasInfluencer || hasMerchant || isAdmin) {
+    links.push({ to: "/listen", icon: <Headphones className="w-4 h-4" />, label: "Discover Music", section: "Discover" });
+  }
+  if (hasFan || isAdmin) {
+    links.push({ to: "/parties", icon: <Users className="w-4 h-4" />, label: "Listening Parties", section: "Discover" });
+  }
+  if (hasMerchant || hasFan || isAdmin) {
+    links.push({ to: "/store", icon: <Store className="w-4 h-4" />, label: "Store", section: "Discover" });
+  }
 
-  // Non-artist profiles can see their sent booking requests
   if (!hasArtist) {
-    links.push(
-      { to: "/bookings", icon: <BookOpen className="w-4 h-4" />, label: "My Requests", section: "Discover" },
-    );
+    links.push({ to: "/bookings", icon: <BookOpen className="w-4 h-4" />, label: "My Requests", section: "Discover" });
   }
 
   // Coins & account - available to all
   links.push(
+    { to: "/messages", icon: <MessageCircle className="w-4 h-4" />, label: "Messages", section: "Account" },
     { to: "/buy-coins", icon: <Coins className="w-4 h-4" />, label: "Buy Coins", section: "Account" },
   );
   if (!isAdmin) links.push({ to: "/tiers", icon: <Crown className="w-4 h-4" />, label: "Plans", section: "Account" });

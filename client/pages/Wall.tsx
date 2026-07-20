@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Play, Pause, Heart, MessageCircle, Share2, ExternalLink,
   Music, TrendingUp, ShoppingBag, Video, Mic, Radio,
-  ChevronRight, Volume2, VolumeX, Repeat, Star, Coins
+  ChevronRight, Volume2, VolumeX, Repeat, Star, Coins, Send
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import AppSidebar from "@/components/AppSidebar";
@@ -301,10 +301,10 @@ export default function Wall() {
           setPosts(data.posts);
         } else {
           // Fall back to mock data so the wall never looks empty
-          setPosts([]);
+          setPosts(MOCK_POSTS);
         }
       } catch {
-        setPosts([]);
+        setPosts(MOCK_POSTS);
       } finally {
         setLoading(false);
       }
@@ -339,6 +339,18 @@ export default function Wall() {
                 {liveCount} Live
               </Link>
             )}
+          </div>
+
+          {/* Composer / feature entry */}
+          <div className="mb-4 rounded-2xl border border-border/40 bg-card/30 p-4">
+            <p className="text-sm font-semibold mb-1">Share with the community</p>
+            <p className="text-xs text-muted-foreground mb-3">Reels, snippets, live streams, promos, drops and gigs all live here as the timeline for every profile.</p>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/broadcast" className="px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold hover:bg-primary/20">Go Live</Link>
+              <Link to="/submit-music" className="px-3 py-1.5 rounded-full bg-card border border-border/40 text-xs font-semibold hover:bg-card/60">Post Reel/Snippet</Link>
+              <Link to="/store" className="px-3 py-1.5 rounded-full bg-card border border-border/40 text-xs font-semibold hover:bg-card/60">Browse Drops</Link>
+              <Link to="/messages" className="px-3 py-1.5 rounded-full bg-card border border-border/40 text-xs font-semibold hover:bg-card/60 flex items-center gap-1"><Send className="w-3 h-3" /> Messages</Link>
+            </div>
           </div>
 
           {/* Filter pills */}

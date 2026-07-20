@@ -25,6 +25,8 @@ export default function Broadcast() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
   const analyserNodeRef = useRef<AnalyserNode | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const canvasStreamRef = useRef<MediaStream | null>(null);
 
   const [isLive, setIsLive] = useState(false);
   const [listenerCount, setListenerCount] = useState(0);
@@ -40,6 +42,7 @@ export default function Broadcast() {
   const [streamPrivacy, setStreamPrivacy] = useState<"public" | "followers" | "private">("public");
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [broadcastStatus, setBroadcastStatus] = useState("Browser audio will be sent to Livepeer when you go live.");
 
   // Track state
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -150,6 +153,96 @@ export default function Broadcast() {
     }
   };
 
+
+  const waitForIceGatheringComplete = (peerConnection: RTCPeerConnection) =>
+    new Promise<void>((resolve) => {
+      if (peerConnection.iceGatheringState === "complete") {
+        resolve();
+        return;
+      }
+      const onStateChange = () => {
+        if (peerConnection.iceGatheringState === "complete") {
+          peerConnection.removeEventListener("icegatheringstatechange", onStateChange);
+          resolve();
+        }
+      };
+      peerConnection.addEventListener("icegatheringstatechange", onStateChange);
+      setTimeout(() => {
+        peerConnection.removeEventListener("icegatheringstatechange", onStateChange);
+        resolve();
+      }, 3000);
+    });
+
+  const createSilentVideoTrack = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1280;
+    canvas.height = 720;
+    const context = canvas.getContext("2d");
+    if (context) {
+      context.fillStyle = "#16051f";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "#ffffff";
+      context.font = "48px sans-serif";
+      context.textAlign = "center";
+      context.fillText("CheckinPurple Live", canvas.width / 2, canvas.height / 2);
+    }
+    const stream = canvas.captureStream(1);
+    canvasStreamRef.current = stream;
+    return stream.getVideoTracks()[0];
+  };
+
+  const startLivepeerBrowserBroadcast = async (streamKey: string) => {
+    const audio = audioRef.current;
+    if (!audio) throw new Error("Audio player is not ready");
+    const captureStream = (audio as HTMLAudioElement & { captureStream?: () => MediaStream; mozCaptureStream?: () => MediaStream }).captureStream?.() ||
+      (audio as HTMLAudioElement & { mozCaptureStream?: () => MediaStream }).mozCaptureStream?.();
+    if (!captureStream) {
+      throw new Error("Your browser cannot capture the audio player. Please use Chrome/Edge or OBS with the Livepeer key.");
+    }
+    const audioTrack = captureStream.getAudioTracks()[0];
+    if (!audioTrack) throw new Error("No audio track is available to broadcast");
+
+    const redirectResponse = await fetch(`https://livepeer.studio/webrtc/${streamKey}`, { method: "HEAD" });
+    const ingestUrl = redirectResponse.url || `https://livepeer.studio/webrtc/${streamKey}`;
+    const host = new URL(ingestUrl).host;
+    const peerConnection = new RTCPeerConnection({
+      iceServers: [
+        { urls: `stun:${host}` },
+        { urls: `turn:${host}`, username: "livepeer", credential: "livepeer" },
+      ],
+    });
+    peerConnectionRef.current = peerConnection;
+    peerConnection.addTrack(audioTrack, captureStream);
+    const videoTrack = createSilentVideoTrack();
+    if (videoTrack) peerConnection.addTrack(videoTrack, canvasStreamRef.current!);
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    await waitForIceGatheringComplete(peerConnection);
+
+    const whipResponse = await fetch(ingestUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/sdp" },
+      body: peerConnection.localDescription?.sdp || offer.sdp,
+    });
+    if (!whipResponse.ok) {
+      const details = await whipResponse.text().catch(() => "");
+      throw new Error(details || "Livepeer rejected the browser broadcast");
+    }
+    const answer = await whipResponse.text();
+    await peerConnection.setRemoteDescription({ type: "answer", sdp: answer });
+    setBroadcastStatus("Livepeer is receiving your browser audio stream.");
+  };
+
+  const stopLivepeerBrowserBroadcast = () => {
+    peerConnectionRef.current?.getSenders().forEach(sender => sender.track?.stop());
+    peerConnectionRef.current?.close();
+    peerConnectionRef.current = null;
+    canvasStreamRef.current?.getTracks().forEach(track => track.stop());
+    canvasStreamRef.current = null;
+    setBroadcastStatus("Browser audio will be sent to Livepeer when you go live.");
+  };
+
   const getLivepeerStreamKey = async () => {
     try {
       const res = await fetch("/api/stream/livepeer-key", {
@@ -184,6 +277,11 @@ export default function Broadcast() {
       audioContextRef.current?.resume().catch(() => {});
       const livepeerData = await getLivepeerStreamKey();
       if (!livepeerData) throw new Error("Could not generate Livepeer stream key");
+      if (currentTrack && !isPlaying) {
+        setIsPlaying(true);
+        await audioRef.current?.play().catch(err => console.warn("Playback blocked:", err));
+      }
+      await startLivepeerBrowserBroadcast(livepeerData.streamKey);
       const res = await fetch("/api/streams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -199,15 +297,12 @@ export default function Broadcast() {
       setIsLive(true);
       setShareLink(`${window.location.origin}/listen?stream=${data.stream.id}`);
       setListenerCount(0);
-      if (currentTrack && !isPlaying) {
-        setIsPlaying(true);
-        await audioRef.current?.play().catch(err => console.warn("Playback blocked:", err));
-      }
       const interval = setInterval(() => {
         setListenerCount(prev => Math.min(prev + Math.floor(Math.random() * 2), 999));
       }, 3000);
       return () => clearInterval(interval);
     } catch (err) {
+      stopLivepeerBrowserBroadcast();
       setError(err instanceof Error ? err.message : "Failed to go live");
     } finally {
       setLoading(false);
@@ -219,6 +314,7 @@ export default function Broadcast() {
     setLoading(true);
     try {
       await fetch(`/api/streams/${streamId}`, { method: "DELETE" });
+      stopLivepeerBrowserBroadcast();
       setIsLive(false); setStreamId(null); setListenerCount(0); setIsPlaying(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to end stream");
@@ -285,7 +381,7 @@ export default function Broadcast() {
               <p className="text-sm font-semibold text-primary mb-1 flex items-center gap-2">
                 <Zap className="w-4 h-4" /> Livepeer Stream Active
               </p>
-              <p className="text-xs text-muted-foreground mb-2">Use OBS or similar to broadcast audio:</p>
+              <p className="text-xs text-muted-foreground mb-2">{broadcastStatus} OBS backup details:</p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-card/40 rounded-lg p-2">
                   <p className="text-muted-foreground">RTMP URL</p>
