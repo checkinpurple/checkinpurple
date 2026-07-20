@@ -131,7 +131,7 @@ export default function Listen() {
       await fetch("/api/social/follow", {
         method: already ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
-        body: JSON.stringify({ followingId: stream.artistId }),
+        body: JSON.stringify({ followed_id: stream.artistId }),
       });
       if (already) {
         setFollowedArtists(p => p.filter(a => a.id !== stream.artistId));

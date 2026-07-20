@@ -13,11 +13,11 @@ export const getFollows: RequestHandler = async (req, res) => {
 
     const { data, error } = await supabase
       .from("follows")
-      .select("*")
-      .or(`follower_id.eq.${userId},followed_id.eq.${userId}`);
+      .select("followed_id, users!follows_followed_id_fkey(id, username, avatar_url)")
+      .eq("follower_id", userId);
 
     if (error) throw error;
-    res.json(data);
+    res.json({ success: true, following: (data || []).map((follow: any) => follow.users).filter(Boolean) });
   } catch (error) {
     console.error("Error getting follows:", error);
     res.status(500).json({ error: "Failed to get follows" });

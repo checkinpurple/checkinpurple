@@ -112,13 +112,13 @@ function getNavLinks(
 
   // Discovery features are grouped by the active profile so the sidebar does not mix unrelated tools.
   if (hasFan || hasInfluencer || hasMerchant || isAdmin) {
-    links.push({ to: "/listen", icon: <Headphones className="w-4 h-4" />, label: "Discover Music", section: "Discover" });
+    links.push({ to: "/listen", icon: <Headphones className="w-4 h-4" />, label: "Discover Music", section: isAdmin ? "Fan Tools" : "Discover" });
   }
   if (hasFan || isAdmin) {
-    links.push({ to: "/parties", icon: <Users className="w-4 h-4" />, label: "Listening Parties", section: "Discover" });
+    links.push({ to: "/parties", icon: <Users className="w-4 h-4" />, label: "Listening Parties", section: isAdmin ? "Fan Tools" : "Discover" });
   }
   if (hasMerchant || hasFan || isAdmin) {
-    links.push({ to: "/store", icon: <Store className="w-4 h-4" />, label: "Store", section: "Discover" });
+    links.push({ to: "/store", icon: <Store className="w-4 h-4" />, label: "Store", section: isAdmin ? "Fan Tools" : "Discover" });
   }
 
   if (!hasArtist) {

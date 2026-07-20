@@ -20,7 +20,7 @@ var supabase = createClient(supabaseUrl || "http://localhost:54321", supabaseSer
 //#region server/routes/streams.ts
 var createStream = async (req, res) => {
 	try {
-		const { userId, title } = req.body;
+		const { userId, title, genre } = req.body;
 		if (!userId || !title) return res.status(400).json({ error: "userId and title required" });
 		const streamData = {
 			id: `stream_${Date.now()}`,
@@ -32,6 +32,11 @@ var createStream = async (req, res) => {
 			livepeer_stream_id: req.body.livepeerStreamId || null,
 			livepeer_playback_id: req.body.playbackId || null
 		};
+		const wallMetadata = {
+			isLive: true,
+			viewerCount: 0,
+			genre: genre || "Various"
+		};
 		const { data, error } = await supabase.from("streams").insert(streamData).select().single();
 		if (error) {
 			console.error("Error creating stream:", error);
@@ -41,10 +46,7 @@ var createStream = async (req, res) => {
 			user_id: userId,
 			type: "stream",
 			caption: title,
-			metadata: {
-				isLive: true,
-				viewerCount: 0
-			}
+			metadata: wallMetadata
 		});
 		res.json({
 			success: true,
@@ -113,11 +115,26 @@ var updateListenerCount = async (req, res) => {
 };
 var listActiveStreams = async (_req, res) => {
 	try {
-		const { data, error } = await supabase.from("streams").select("id, title, listener_count, started_at").eq("status", "live").order("started_at", { ascending: false });
+		const { data, error } = await supabase.from("streams").select("id, user_id, title, listener_count, started_at, livepeer_playback_id").eq("status", "live").order("started_at", { ascending: false });
 		if (error) return res.status(500).json({ error: "Failed to list streams" });
+		const userIds = Array.from(new Set((data || []).map((stream) => stream.user_id).filter(Boolean)));
+		const { data: users } = userIds.length ? await supabase.from("users").select("id, username, avatar_url").in("id", userIds) : { data: [] };
+		const userMap = new Map((users || []).map((user) => [user.id, user]));
 		res.json({
 			success: true,
-			streams: data || [],
+			streams: (data || []).map((stream) => {
+				const artist = userMap.get(stream.user_id);
+				return {
+					id: stream.id,
+					userId: stream.user_id,
+					title: stream.title,
+					listenerCount: stream.listener_count,
+					startedAt: stream.started_at,
+					playbackId: stream.livepeer_playback_id,
+					username: artist?.username,
+					avatar_url: artist?.avatar_url
+				};
+			}),
 			total: data?.length || 0
 		});
 	} catch {
@@ -186,9 +203,12 @@ var getFollows = async (req, res) => {
 	try {
 		const userId = req.query.user_id;
 		if (!userId) return res.status(400).json({ error: "user_id required" });
-		const { data, error } = await supabase.from("follows").select("*").or(`follower_id.eq.${userId},followed_id.eq.${userId}`);
+		const { data, error } = await supabase.from("follows").select("followed_id, users!follows_followed_id_fkey(id, username, avatar_url)").eq("follower_id", userId);
 		if (error) throw error;
-		res.json(data);
+		res.json({
+			success: true,
+			following: (data || []).map((follow) => follow.users).filter(Boolean)
+		});
 	} catch (error) {
 		console.error("Error getting follows:", error);
 		res.status(500).json({ error: "Failed to get follows" });
@@ -1166,7 +1186,7 @@ var createLivepeerStreamKey = async (req, res) => {
 			},
 			body: JSON.stringify({
 				name,
-				record: false
+				record: req.body?.record === true
 			})
 		});
 		const text = await response.text().catch(() => "");
@@ -1176,10 +1196,13 @@ var createLivepeerStreamKey = async (req, res) => {
 		} catch {
 			data = null;
 		}
-		if (!response.ok) return res.status(500).json({ error: data && (data.error || data.message) || text || "Failed to create Livepeer stream" });
-		const streamKey = typeof data?.streamKey === "object" ? data.streamKey.value || data.streamKey : data?.streamKey;
-		const playbackId = typeof data?.playbackId === "object" ? data.playbackId.value || data.playbackId : data?.playbackId;
-		if (!streamKey) return res.status(500).json({ error: "Livepeer returned an invalid stream key" });
+		if (!response.ok) return res.status(response.status).json({ error: data && (data.error || data.message) || text || "Failed to create Livepeer stream" });
+		const streamKey = typeof data?.streamKey === "object" ? data.streamKey.value || data.streamKey : data?.streamKey || (typeof data?.stream_key === "object" ? data.stream_key.value || data.stream_key : data?.stream_key);
+		const playbackId = typeof data?.playbackId === "object" ? data.playbackId.value || data.playbackId : data?.playbackId || (typeof data?.playback_id === "object" ? data.playback_id.value || data.playback_id : data?.playback_id);
+		if (!streamKey) return res.status(500).json({
+			error: "Livepeer returned an invalid stream key",
+			details: data
+		});
 		res.json({
 			success: true,
 			streamKey,
@@ -1202,27 +1225,11 @@ async function ensureAdmin(userId) {
 var listUsers = async (req, res) => {
 	try {
 		if (!await ensureAdmin(req.user?.id)) return res.status(403).json({ error: "Forbidden" });
-		const { data: authData, error: authError } = await supabase.auth.admin.listUsers({ perPage: 1e3 });
-		if (authError) throw authError;
-		const authUsers = authData?.users || [];
-		const { data: profileData } = await supabase.from("users").select("id,email,username,role,is_verified,is_banned,created_at").order("created_at", { ascending: false });
-		const profileMap = new Map((profileData || []).map((u) => [u.id, u]));
-		const merged = authUsers.map((au) => {
-			const profile = profileMap.get(au.id);
-			return {
-				id: au.id,
-				email: au.email || profile?.email || "",
-				username: profile?.username || au.user_metadata?.username || au.email?.split("@")[0] || "—",
-				role: profile?.role || au.user_metadata?.role || "fan",
-				is_verified: profile?.is_verified || false,
-				is_banned: profile?.is_banned || false,
-				created_at: au.created_at,
-				has_profile: !!profile
-			};
-		});
+		const { data: profileData, error: profileError, count } = await supabase.from("users").select("id,email,username,role,is_verified,is_banned,created_at", { count: "exact" }).order("created_at", { ascending: false });
+		if (profileError) throw profileError;
 		res.json({
-			users: merged,
-			total: merged.length
+			users: profileData || [],
+			total: count ?? profileData?.length ?? 0
 		});
 	} catch (error) {
 		console.error("Error listing users:", error);

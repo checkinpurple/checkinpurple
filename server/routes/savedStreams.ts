@@ -99,7 +99,7 @@ export const getPublicSavedStreams = async (req: Request, res: Response) => {
         .from("follows")
         .select("id")
         .eq("follower_id", viewerId || "")
-        .eq("following_id", userId)
+        .eq("followed_id", userId)
         .single();
 
       const isFollower = !!followData;
