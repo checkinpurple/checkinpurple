@@ -18,6 +18,7 @@ interface Stream {
   artistAvatar?: string;
   genre?: string;
   liked?: boolean;
+  playbackId?: string;
 }
 
 interface FollowedArtist {
@@ -62,6 +63,27 @@ export default function Listen() {
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !selectedStream) return;
+    if (!selectedStream.playbackId) {
+      audio.removeAttribute("src");
+      audio.load();
+      return;
+    }
+    audio.src = `https://livepeercdn.studio/hls/${selectedStream.playbackId}/index.m3u8`;
+    audio.load();
+    if (isPlaying) audio.play().catch(console.error);
+  }, [selectedStream]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !selectedStream?.playbackId) return;
+    if (isPlaying) audio.play().catch(console.error);
+    else audio.pause();
+  }, [isPlaying, selectedStream?.playbackId]);
+
+
   const fetchStreams = async () => {
     try {
       const r = await fetch("/api/streams");
@@ -76,6 +98,7 @@ export default function Listen() {
           artistAvatar: s.avatar_url,
           genre: s.genre || "Various",
           liked: false,
+          playbackId: s.playbackId,
         })));
       }
     } catch {} finally { setLoading(false); }
@@ -308,7 +331,7 @@ export default function Listen() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredStreams.map(stream => (
                   <div key={stream.id} className="group rounded-2xl border-2 border-border/30 hover:border-primary/40 overflow-hidden glass transition-all">
-                    <button onClick={() => setSelectedStream(stream)} className="w-full text-left">
+                    <button onClick={() => { setSelectedStream(stream); setIsPlaying(true); }} className="w-full text-left">
                       <div className="aspect-video bg-gradient-to-br from-primary/10 via-accent/10 to-secondary/10 relative overflow-hidden">
                         <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-red-500/20 border border-red-500 rounded-full">
                           <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
