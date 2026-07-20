@@ -46,10 +46,10 @@ export default function Dashboard({ viewAs }: { viewAs?: ProfileType } = {}) {
   };
 
   const isAdmin = user.role === "admin";
-  const isArtist = displayProfile === "artist" || displayProfile === "artist_fan";
-  const isFan = displayProfile === "fan" || displayProfile === "artist_fan";
-  const isInfluencer = displayProfile === "influencer";
-  const isMerchant = displayProfile === "merchant";
+  const isArtist = isAdmin || displayProfile === "artist" || displayProfile === "artist_fan";
+  const isFan = isAdmin || displayProfile === "fan" || displayProfile === "artist_fan";
+  const isInfluencer = isAdmin || displayProfile === "influencer";
+  const isMerchant = isAdmin || displayProfile === "merchant";
 
   useEffect(() => {
     if (!user) return;
