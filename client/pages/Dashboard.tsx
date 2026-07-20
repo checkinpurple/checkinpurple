@@ -4,7 +4,7 @@ import {
   Mic, Users, Coins, Crown, Wallet, Radio,
   ShieldAlert, Music, Star, ShoppingBag, Calendar,
   ArrowLeftRight, Zap, Send, MapPin, Settings,
-  Store
+  Store, MessageCircle, UserRound
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import type { ProfileType } from "@shared/api";
@@ -91,6 +91,16 @@ export default function Dashboard({ viewAs }: { viewAs?: ProfileType } = {}) {
   const isFan = displayProfile === "fan" || displayProfile === "artist_fan";
   const isInfluencer = displayProfile === "influencer";
   const isMerchant = displayProfile === "merchant";
+
+  const publicProfilePath = isArtist
+    ? `/artist/${user.username}`
+    : isFan
+      ? `/fan/${user.username}`
+      : isInfluencer
+        ? `/influencer/${user.username}`
+        : isMerchant
+          ? `/merchant/${user.username}`
+          : undefined;
 
   useEffect(() => {
     if (!user) return;
@@ -361,6 +371,20 @@ export default function Dashboard({ viewAs }: { viewAs?: ProfileType } = {}) {
             ];
 
             const accountActions: DashboardAction[] = [
+              ...(publicProfilePath ? [{
+                title: "View Public Profile",
+                description: "See what visitors see",
+                to: publicProfilePath,
+                icon: <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center"><UserRound className="w-5 h-5 text-primary" /></div>,
+                className: "hover:border-primary/40 hover:bg-primary/5",
+              }] : []),
+              {
+                title: "Messages",
+                description: "Inbox & admin support",
+                to: "/messages",
+                icon: <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center"><MessageCircle className="w-5 h-5 text-blue-400" /></div>,
+                className: "hover:border-blue-400/40 hover:bg-blue-400/5",
+              },
               {
                 title: "Transfer Coins",
                 description: "Send to anyone",

@@ -4,7 +4,7 @@ import {
   Radio, LayoutDashboard, Mic, Music, ShoppingBag, Star,
   Users, Wallet, Settings, LogOut, Menu, X, Bell,
   Coins, BookOpen, Calendar, TrendingUp, Camera, Store,
-  Headphones, Crown, Send, MapPin, ShieldAlert
+  Headphones, Crown, Send, MapPin, ShieldAlert, MessageCircle
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import type { ProfileType } from "@shared/api";
@@ -127,6 +127,7 @@ function getNavLinks(
 
   // Coins & account - available to all
   links.push(
+    { to: "/messages", icon: <MessageCircle className="w-4 h-4" />, label: "Messages", section: "Account" },
     { to: "/buy-coins", icon: <Coins className="w-4 h-4" />, label: "Buy Coins", section: "Account" },
   );
   if (!isAdmin) links.push({ to: "/tiers", icon: <Crown className="w-4 h-4" />, label: "Plans", section: "Account" });
