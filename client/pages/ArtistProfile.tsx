@@ -5,7 +5,7 @@ import {
   Star, ExternalLink, Instagram, Twitter, Coins,
   Zap, Check, UserPlus, UserCheck, AlertTriangle,
   Clock, Ticket, ArrowLeft, Send, Info, Camera,
-  ShoppingBag, TrendingUp, Image, X, ChevronLeft, ChevronRight
+  ShoppingBag, TrendingUp, Image, X, ChevronLeft, ChevronRight, Settings
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import AgeGate from "@/components/AgeGate";
@@ -182,8 +182,9 @@ export default function ArtistProfile() {
     finally { setDealLoading(false); }
   };
 
-  const isMerchant = user?.profiles?.includes("merchant") || user?.role === "merchant";
-  const isInfluencer = user?.profiles?.includes("influencer") || user?.role === "influencer";
+  const isOwn = user?.id === artist.id || user?.username === artist.username;
+  const isMerchant = !isOwn && (user?.profiles?.includes("merchant") || user?.role === "merchant");
+  const isInfluencer = !isOwn && (user?.profiles?.includes("influencer") || user?.role === "influencer");
   const isAdmin = user?.role === "admin";
 
   if (loading) return (
@@ -205,7 +206,7 @@ export default function ArtistProfile() {
     { id: "gigs", label: `Gigs (${gigs.length})` },
     { id: "gallery", label: "Gallery" },
     { id: "collabs", label: "Collabs" },
-    ...(artist.booking_available ? [{ id: "book", label: "Book" }] : []),
+    ...(!isOwn && artist.booking_available ? [{ id: "book", label: "Book" }] : []),
   ] as { id: typeof tab; label: string }[];
 
   // Show age gate for explicit artists until confirmed
@@ -278,14 +279,28 @@ export default function ArtistProfile() {
               <span><b className="text-foreground">{followerCount}</b> followers</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleFollow}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  isFollowing ? "bg-card border border-border/40 text-muted-foreground hover:text-foreground" : "bg-primary text-primary-foreground hover:opacity-90"
-                }`}
-              >
-                {isFollowing ? <><UserCheck className="w-4 h-4" /> Following</> : <><UserPlus className="w-4 h-4" /> Follow</>}
-              </button>
+              {isOwn ? (
+                <>
+                  <Link to="/artist-settings" className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+                    <Settings className="w-4 h-4" /> Edit Profile
+                  </Link>
+                  <Link to="/broadcast" className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-card border border-border/40 text-foreground hover:bg-card/60 transition-colors">
+                    <Mic className="w-4 h-4" /> Go Live
+                  </Link>
+                  <Link to="/dashboard" className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-card border border-border/40 text-muted-foreground hover:text-foreground transition-colors">
+                    Dashboard
+                  </Link>
+                </>
+              ) : (
+                <button
+                  onClick={handleFollow}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    isFollowing ? "bg-card border border-border/40 text-muted-foreground hover:text-foreground" : "bg-primary text-primary-foreground hover:opacity-90"
+                  }`}
+                >
+                  {isFollowing ? <><UserCheck className="w-4 h-4" /> Following</> : <><UserPlus className="w-4 h-4" /> Follow</>}
+                </button>
+              )}
 
               {/* Merchant: Request to dress artist */}
               {isMerchant && (
@@ -392,7 +407,11 @@ export default function ArtistProfile() {
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">{artist.booking_note || "Contact for rates and availability."}</p>
                 {artist.booking_fee_zar && <p className="text-sm font-medium">From R{artist.booking_fee_zar}</p>}
-                <button onClick={() => setTab("book")} className="mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90">Book Now</button>
+                {isOwn ? (
+                  <Link to="/artist-settings" className="inline-flex mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90">Manage Booking Settings</Link>
+                ) : (
+                  <button onClick={() => setTab("book")} className="mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90">Book Now</button>
+                )}
               </div>
             )}
           </div>
@@ -438,7 +457,7 @@ export default function ArtistProfile() {
 
         {tab === "gallery" && (
           <div>
-            {(!isFollowing && !isAdmin && user?.id !== artist.id) ? (
+            {(!isFollowing && !isAdmin && !isOwn) ? (
               <div className="text-center py-12 text-muted-foreground text-sm rounded-xl border border-border/40 bg-card/30">
                 <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
                 Follow to view gallery.

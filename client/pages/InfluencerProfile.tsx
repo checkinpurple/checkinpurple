@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, TrendingUp, Users, Star, ExternalLink,
   Instagram, Twitter, Globe, Coins, AlertTriangle,
-  CheckCircle, Send, UserPlus, UserCheck, Music
+  CheckCircle, Send, UserPlus, UserCheck, Music, Settings
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -193,7 +193,16 @@ export default function InfluencerPublicProfile() {
               )}
 
               <div className="flex flex-wrap gap-2">
-                {!isOwn && (
+                {isOwn ? (
+                  <>
+                    <Link to="/influencer-settings" className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+                      <Settings className="w-4 h-4" /> Edit Profile
+                    </Link>
+                    <Link to="/dashboard" className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-card border border-border/40 text-muted-foreground hover:text-foreground transition-colors">
+                      Dashboard
+                    </Link>
+                  </>
+                ) : (
                   <button onClick={toggleFollow}
                     className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
                       isFollowing ? "bg-card border border-border/40 text-muted-foreground" : "bg-primary text-primary-foreground hover:opacity-90"
