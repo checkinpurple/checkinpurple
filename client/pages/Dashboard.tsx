@@ -14,7 +14,7 @@ import Notifications from "@/components/Notifications";
 import AppSidebar from "@/components/AppSidebar";
 import FanStatus from "@/components/FanStatus";
 
-export default function Dashboard() {
+export default function Dashboard({ viewAs }: { viewAs?: ProfileType } = {}) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [coinBalance, setCoinBalance] = useState(0);
@@ -37,7 +37,19 @@ export default function Dashboard() {
     ? (user?.role as ProfileType)
     : availableProfiles[0];
 
-  const hasProfile = (role: ProfileType) => availableProfiles.includes(role);
+  const displayProfile: ProfileType = viewAs ?? activeProfile;
+
+  const hasProfile = (role: ProfileType) => {
+    if (availableProfiles.includes(role)) return true;
+    if (availableProfiles.includes("artist_fan") && (role === "artist" || role === "fan")) return true;
+    return false;
+  };
+
+  const isAdmin = user.role === "admin";
+  const isArtist = displayProfile === "artist" || displayProfile === "artist_fan";
+  const isFan = displayProfile === "fan" || displayProfile === "artist_fan";
+  const isInfluencer = displayProfile === "influencer";
+  const isMerchant = displayProfile === "merchant";
 
   useEffect(() => {
     if (!user) return;
@@ -85,12 +97,6 @@ export default function Dashboard() {
     </div>
   );
 
-  const isAdmin = user.role === "admin";
-  const isArtist = isAdmin || hasProfile("artist");
-  const isFan = isAdmin || hasProfile("fan");
-  const isInfluencer = isAdmin || hasProfile("influencer");
-  const isMerchant = isAdmin || hasProfile("merchant");
-
   return (
     <div className="min-h-screen bg-background flex">
       <AppSidebar pendingBookings={pendingBookings} />
@@ -100,7 +106,7 @@ export default function Dashboard() {
         <div className="hidden lg:flex items-center justify-between px-6 py-4 border-b border-border/40">
           <div>
             <h1 className="font-bold text-lg">Dashboard</h1>
-            <p className="text-xs text-muted-foreground capitalize">{activeProfile} profile</p>
+            <p className="text-xs text-muted-foreground capitalize">{isAdmin ? "admin" : displayProfile} profile</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-full">

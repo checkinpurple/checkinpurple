@@ -18,7 +18,7 @@ export const createLivepeerStreamKey: RequestHandler = async (req, res) => {
       },
       body: JSON.stringify({
         name,
-        record: false,
+        record: req.body?.record === true,
       }),
     });
 
@@ -30,16 +30,31 @@ export const createLivepeerStreamKey: RequestHandler = async (req, res) => {
       data = null;
     }
     if (!response.ok) {
-      return res.status(500).json({
+      return res.status(response.status).json({
         error: (data && (data.error || data.message)) || text || "Failed to create Livepeer stream",
       });
     }
 
-    const streamKey = typeof data?.streamKey === "object" ? data.streamKey.value || data.streamKey : data?.streamKey;
-    const playbackId = typeof data?.playbackId === "object" ? data.playbackId.value || data.playbackId : data?.playbackId;
+    const streamKey =
+      typeof data?.streamKey === "object"
+        ? data.streamKey.value || data.streamKey
+        : data?.streamKey ||
+          (typeof data?.stream_key === "object"
+            ? data.stream_key.value || data.stream_key
+            : data?.stream_key);
+    const playbackId =
+      typeof data?.playbackId === "object"
+        ? data.playbackId.value || data.playbackId
+        : data?.playbackId ||
+          (typeof data?.playback_id === "object"
+            ? data.playback_id.value || data.playback_id
+            : data?.playback_id);
 
     if (!streamKey) {
-      return res.status(500).json({ error: "Livepeer returned an invalid stream key" });
+      return res.status(500).json({
+        error: "Livepeer returned an invalid stream key",
+        details: data,
+      });
     }
 
     res.json({

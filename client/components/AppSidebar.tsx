@@ -28,7 +28,11 @@ function getNavLinks(
 ): SidebarLink[] {
   const links: SidebarLink[] = [];
   const has = (p: ProfileType) => profiles.includes(p);
-  const isArtist = isAdmin || has("artist");
+  const hasArtist = isAdmin || has("artist") || has("artist_fan");
+  const hasFan = isAdmin || has("fan") || has("artist_fan");
+  const hasInfluencer = isAdmin || has("influencer");
+  const hasMerchant = isAdmin || has("merchant");
+  const isArtist = hasArtist;
 
   // Admin gets Admin Panel as home
   if (isAdmin) {
@@ -78,8 +82,8 @@ function getNavLinks(
     });
   }
 
-  // Artist-only features (not available to fan/influencer/merchant)
-  if (isArtist) {
+  // Artist-only features (also available to artist_fan)
+  if (hasArtist) {
     links.push(
       { to: "/broadcast", icon: <Mic className="w-4 h-4" />, label: "Go Live", section: "Artist Tools" },
       { to: "/past-streams", icon: <Radio className="w-4 h-4" />, label: "Past Streams", section: "Artist Tools" },
@@ -93,7 +97,7 @@ function getNavLinks(
   }
 
   // Influencer-specific hub
-  if (has("influencer") || isAdmin) {
+  if (hasInfluencer) {
     links.push(
       { to: "/influencer", icon: <TrendingUp className="w-4 h-4" />, label: "Influencer Hub", section: isAdmin ? "Admin" : "Influencer" },
       { to: "/influencer-settings", icon: <Settings className="w-4 h-4" />, label: "Settings", section: isAdmin ? "Admin" : "Influencer" },
@@ -101,7 +105,7 @@ function getNavLinks(
   }
 
   // Merchant-specific store management
-  if (has("merchant") || isAdmin) {
+  if (hasMerchant) {
     links.push(
       { to: "/merchant", icon: <ShoppingBag className="w-4 h-4" />, label: "My Store", section: isAdmin ? "Admin" : "Merchant" },
     );
@@ -114,8 +118,8 @@ function getNavLinks(
     { to: "/store", icon: <Store className="w-4 h-4" />, label: "Store", section: "Discover" },
   );
 
-  // Non-artists can see their sent booking requests
-  if (!isArtist) {
+  // Non-artist profiles can see their sent booking requests
+  if (!hasArtist) {
     links.push(
       { to: "/bookings", icon: <BookOpen className="w-4 h-4" />, label: "My Requests", section: "Discover" },
     );

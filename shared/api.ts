@@ -197,7 +197,7 @@ export interface SubscriptionResponse {
   tier: SubscriptionTier;
 }
 
-export type ProfileType = 'fan' | 'artist' | 'merchant' | 'influencer';
+export type ProfileType = 'fan' | 'artist' | 'merchant' | 'influencer' | 'artist_fan';
 
 export interface UserProfile {
   id: string;
