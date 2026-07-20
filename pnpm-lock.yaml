@@ -111,6 +111,9 @@ importers:
       '@react-three/fiber':
         specifier: ^8.18.0
         version: 8.18.0(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.176.0)
+      '@rolldown/binding-linux-x64-gnu':
+        specifier: 1.1.5
+        version: 1.1.5
       '@swc/core':
         specifier: ^1.13.3
         version: 1.13.3
@@ -1238,6 +1241,12 @@ packages:
 
   '@rolldown/binding-linux-x64-gnu@1.0.0-rc.11':
     resolution: {integrity: sha512-qXBQQO9OvkjjQPLdUVr7Nr2t3QTZI7s4KZtfw7HzBgjbmAPSFwSv4rmET9lLSgq3rH/ndA3ngv3Qb8l2njoPNA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [linux]
+
+  '@rolldown/binding-linux-x64-gnu@1.1.5':
+    resolution: {integrity: sha512-FjcpEKUyJygHgs1o50VYNvkt5+7Le/VEdYt0AkRpkL33MnyQfwr8l5mXwMmfmTbyMPr5vJLC+8/Gd9gXnwU1QQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
@@ -4074,6 +4083,8 @@ snapshots:
 
   '@rolldown/binding-linux-x64-gnu@1.0.0-rc.11':
     optional: true
+
+  '@rolldown/binding-linux-x64-gnu@1.1.5': {}
 
   '@rolldown/binding-linux-x64-musl@1.0.0-rc.11':
     optional: true
