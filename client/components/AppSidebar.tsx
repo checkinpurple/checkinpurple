@@ -89,7 +89,7 @@ function getNavLinks(
       { to: "/releases", icon: <Music className="w-4 h-4" />, label: "Releases", section: "Artist Tools" },
       { to: "/submit-music", icon: <Send className="w-4 h-4" />, label: "Submit Music", section: "Artist Tools" },
       { to: "/gigs/new", icon: <MapPin className="w-4 h-4" />, label: "Post Gig", section: "Artist Tools" },
-      { to: "/artist-settings", icon: <Settings className="w-4 h-4" />, label: "Artist Profile", section: "Artist Tools" },
+      { to: "/artist-settings", icon: <Settings className="w-4 h-4" />, label: "Settings", section: "Artist Tools" },
       { to: "/wallet", icon: <Wallet className="w-4 h-4" />, label: "Wallet", section: "Artist Tools" },
       { to: "/bookings", icon: <BookOpen className="w-4 h-4" />, label: "Bookings", badge: pendingBookings > 0 ? pendingBookings : undefined, section: "Artist Tools" },
     );
@@ -98,8 +98,8 @@ function getNavLinks(
   // Influencer-specific hub
   if (hasInfluencer) {
     links.push(
-      { to: "/influencer", icon: <TrendingUp className="w-4 h-4" />, label: "Influencer Hub", section: isAdmin ? "Admin" : "Influencer" },
-      { to: "/influencer-settings", icon: <Settings className="w-4 h-4" />, label: "Settings", section: isAdmin ? "Admin" : "Influencer" },
+      { to: "/influencer", icon: <TrendingUp className="w-4 h-4" />, label: "Influencer Hub", section: "Influencer Tools" },
+      { to: "/influencer-settings", icon: <Settings className="w-4 h-4" />, label: "Settings", section: "Influencer Tools" },
     );
   }
 
