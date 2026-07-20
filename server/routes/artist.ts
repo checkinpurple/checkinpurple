@@ -242,7 +242,7 @@ export const updateBookingRequestStatus: RequestHandler = async (req, res) => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: \`Bearer \${resendKey}\`,
+              Authorization: `Bearer ${resendKey}`,
             },
             body: JSON.stringify({
               from: "noreply@checkinpurple.com",
@@ -258,7 +258,6 @@ export const updateBookingRequestStatus: RequestHandler = async (req, res) => {
 
       // In-app notification
       const fanId = (data as any)?.fan?.id || (data as any)?.fan_id;
-      const artistUsername = (data as any)?.artist?.username || "Artist";
       if (fanId) {
         if (status === "accepted") await notifyBookingAccepted(fanId, artistUsername);
         else if (status === "declined") await notifyBookingDeclined(fanId, artistUsername);
