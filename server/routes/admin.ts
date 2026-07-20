@@ -13,11 +13,22 @@ export const listUsers: RequestHandler = async (req, res) => {
     const ok = await ensureAdmin(req.user?.id);
     if (!ok) return res.status(403).json({ error: "Forbidden" });
 
-    // Get total count from auth (real registration count)
-    const { data: authData, error: authError } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-    if (authError) throw authError;
+    // List auth users from Supabase so the count includes every registered account.
+    const authUsers: any[] = [];
+    let page = 1;
+    let totalUsers = 0;
 
-    const authUsers = authData?.users || [];
+    while (true) {
+      const { data, error } = await supabase.auth.admin.listUsers({ perPage: 1000, page });
+      if (error) throw error;
+      if (!data?.users?.length) break;
+
+      authUsers.push(...data.users);
+      const typedData = data as any;
+      totalUsers = typedData.total ?? authUsers.length;
+      if (data.users.length < 1000) break;
+      page += 1;
+    }
 
     // Get profile rows for extra fields (role, username, is_verified, is_banned)
     const { data: profileData } = await supabase
@@ -42,7 +53,7 @@ export const listUsers: RequestHandler = async (req, res) => {
       };
     });
 
-    res.json({ users: merged, total: merged.length });
+    res.json({ users: merged, total: totalUsers || merged.length });
   } catch (error) {
     console.error("Error listing users:", error);
     res.status(500).json({ error: "Failed to list users" });
