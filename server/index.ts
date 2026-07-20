@@ -53,7 +53,7 @@ import {
 import { createLivepeerStreamKey } from "./routes/livepeer";
 import { listUsers, updateUserRole, setUserBanned, listSubmissions } from "./routes/admin";
 import { listParties } from "./routes/parties";
-import { listMyPlaylists, createPlaylist, buyPlaylistSlotWithCoins } from "./routes/playlists";
+// playlists imported below with full set (avoids duplicate declarations)
 import { getWallFeed } from "./routes/wall";
 import { setMerchantAvailability, setDealStatus, createCollabInvite, updateCollabStatus, createDressingRequest, updateDressingStatus } from "./routes/merchant-influencer-extras";
 import { listMyPlaylists, createPlaylist, deletePlaylist, buyPlaylistSlotWithCoins } from "./routes/playlists";

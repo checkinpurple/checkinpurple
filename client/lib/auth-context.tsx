@@ -53,7 +53,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (err) {
         console.error('Auth check failed:', err);
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          // Surface network errors clearly to the UI
+          const msg = err instanceof Error && (err.message.includes('fetch failed') || err.message.includes('NetworkError'))
+            ? 'Network error: unable to reach authentication service.'
+            : 'Auth check failed';
+          setError(msg);
+          setLoading(false);
+        }
       } finally {
         clearTimeout(safetyTimer);
       }
@@ -201,9 +208,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (signInError) {
-        if (signInError.message.includes('invalid login') || signInError.message.includes('Invalid')) {
+        const msg = signInError.message || '';
+        if (msg.includes('fetch failed') || msg.includes('NetworkError') || msg.includes('Failed to fetch')) {
+          throw new Error('Network error: unable to reach authentication service. Check your connection and try again.');
+        } else if (msg.includes('invalid login') || msg.includes('Invalid')) {
           throw new Error('Invalid email or password');
-        } else if (signInError.message.includes('not confirmed')) {
+        } else if (msg.includes('not confirmed')) {
           throw new Error('Please confirm your email before signing in');
         } else {
           throw signInError;
