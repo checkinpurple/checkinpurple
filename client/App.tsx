@@ -119,6 +119,7 @@ export default function App() {
               <Route path="/buy-coins" element={<ProtectedRoute><BuyCoins /></ProtectedRoute>} />
               <Route path="/tiers" element={<ProtectedRoute><Tiers /></ProtectedRoute>} />
               <Route path="/fan" element={<ProtectedRoute><Dashboard viewAs="fan" /></ProtectedRoute>} />
+              <Route path="/artist" element={<ProtectedRoute requiredRole="artist"><Dashboard viewAs="artist" /></ProtectedRoute>} />
               <Route path="/wall" element={<ProtectedRoute><Wall /></ProtectedRoute>} />
               <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
               <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />

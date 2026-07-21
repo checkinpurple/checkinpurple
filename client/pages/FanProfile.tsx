@@ -67,7 +67,13 @@ export default function FanProfile() {
 
       if (error || !data) { setLoading(false); return; }
       setFan(data);
-      setFollowerCount(0); // fetch from follows table if exists
+      const stats = await fetch(`/api/social/stats?user_id=${data.id}`, {
+        headers: user ? { Authorization: `Bearer ${user.id}` } : undefined,
+      }).then(response => response.json());
+      if (stats.success) {
+        setFollowerCount(stats.followerCount ?? 0);
+        setIsFollowing(Boolean(stats.isFollowing));
+      }
 
       // Fetch artists this fan follows
       const { data: followData } = await supabase
@@ -85,7 +91,7 @@ export default function FanProfile() {
       }
 
       // Check if viewer follows this fan
-      if (user && user.id !== data.id) {
+      if (user && user.id !== data.id && !stats.success) {
         const { data: myFollow } = await supabase
           .from("follows")
           .select("id")
@@ -115,11 +121,21 @@ export default function FanProfile() {
     if (!fan) return;
     try {
       if (isFollowing) {
-        await supabase.from("follows").delete().eq("follower_id", user.id).eq("followed_id", fan.id);
+        const response = await fetch("/api/social/follow", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
+          body: JSON.stringify({ followed_id: fan.id }),
+        });
+        if (!response.ok) return;
         setIsFollowing(false);
         setFollowerCount(c => Math.max(0, c - 1));
       } else {
-        await supabase.from("follows").insert({ follower_id: user.id, followed_id: fan.id });
+        const response = await fetch("/api/social/follow", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
+          body: JSON.stringify({ followed_id: fan.id }),
+        });
+        if (!response.ok) return;
         setIsFollowing(true);
         setFollowerCount(c => c + 1);
       }

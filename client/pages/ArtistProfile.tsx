@@ -112,8 +112,15 @@ export default function ArtistProfile() {
       const data = await res.json();
       if (data.success) {
         setArtist(data.artist);
-        setFollowerCount(data.artist.follower_count || 0);
-        if (user && data.followedByMe !== undefined) setIsFollowing(data.followedByMe);
+        const stats = await fetch(`/api/social/stats?user_id=${data.artist.id}`, {
+          headers: user ? { Authorization: `Bearer ${user.id}` } : undefined,
+        }).then(response => response.json());
+        if (stats.success) {
+          setFollowerCount(stats.followerCount ?? 0);
+          setIsFollowing(Boolean(stats.isFollowing));
+        } else if (data.followedByMe !== undefined) {
+          setIsFollowing(data.followedByMe);
+        }
       }
     } catch {}
     finally { setLoading(false); }
@@ -123,11 +130,12 @@ export default function ArtistProfile() {
     if (!user) { navigate("/signin"); return; }
     try {
       const method = isFollowing ? "DELETE" : "POST";
-      await fetch("/api/social/follow", {
+      const response = await fetch("/api/social/follow", {
         method,
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
         body: JSON.stringify({ followed_id: artist?.id }),
       });
+      if (!response.ok) return;
       setIsFollowing(!isFollowing);
       setFollowerCount(c => isFollowing ? c - 1 : c + 1);
     } catch {}
