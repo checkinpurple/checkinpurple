@@ -55,6 +55,22 @@ export const upsertArtistProfile: RequestHandler = async (req, res) => {
   }
 };
 
+export const getArtistProfileByUsername: RequestHandler = async (req, res) => {
+  try {
+    const username = req.params.username;
+    if (!username) return res.status(400).json({ error: "username required" });
+    const { data: user, error: userError } = await supabase.from("users").select("id, username, avatar_url, role, is_verified").eq("username", username).maybeSingle();
+    if (userError) throw userError;
+    if (!user) return res.status(404).json({ error: "Artist not found" });
+    const { data: artist, error } = await supabase.from("artist_profiles").select("*").eq("user_id", user.id).maybeSingle();
+    if (error) throw error;
+    res.json({ success: true, artist: { ...user, ...(artist || {}) } });
+  } catch (error) {
+    console.error("Error getting artist profile by username:", error);
+    res.status(500).json({ error: "Failed to get artist profile" });
+  }
+};
+
 export const getArtistProfile: RequestHandler = async (req, res) => {
   try {
     const artistId = req.params.artistId;
@@ -271,4 +287,3 @@ export const updateBookingRequestStatus: RequestHandler = async (req, res) => {
     res.status(500).json({ error: "Failed to update booking request" });
   }
 };
-

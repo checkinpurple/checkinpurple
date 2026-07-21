@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, Navigate, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, TrendingUp, Users, Star, ExternalLink,
   Instagram, Twitter, Globe, Coins, AlertTriangle,
@@ -72,6 +72,13 @@ export default function InfluencerPublicProfile() {
 
       if (!data) { setLoading(false); return; }
       setInfluencer(data);
+      const stats = await fetch(`/api/social/stats?user_id=${data.id}`, {
+        headers: user ? { Authorization: `Bearer ${user.id}` } : undefined,
+      }).then(response => response.json());
+      if (stats.success) {
+        setFollowerCount(stats.followerCount ?? 0);
+        setIsFollowing(Boolean(stats.isFollowing));
+      }
 
       // Active promos (accepted influencer deals)
       const { data: dealData } = await supabase
@@ -84,7 +91,7 @@ export default function InfluencerPublicProfile() {
       setPromos(dealData || []);
 
       // Follow check
-      if (user && user.id !== data.id) {
+      if (user && user.id !== data.id && !stats.success) {
         const { data: f } = await supabase
           .from("follows").select("id")
           .eq("follower_id", user.id).eq("followed_id", data.id).single();
@@ -97,13 +104,14 @@ export default function InfluencerPublicProfile() {
   const toggleFollow = async () => {
     if (!user) { navigate("/signin"); return; }
     if (!influencer) return;
-    if (isFollowing) {
-      await supabase.from("follows").delete().eq("follower_id", user.id).eq("followed_id", influencer.id);
-      setIsFollowing(false); setFollowerCount(c => Math.max(0, c - 1));
-    } else {
-      await supabase.from("follows").insert({ follower_id: user.id, followed_id: influencer.id });
-      setIsFollowing(true); setFollowerCount(c => c + 1);
-    }
+    const response = await fetch("/api/social/follow", {
+      method: isFollowing ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
+      body: JSON.stringify({ followed_id: influencer.id }),
+    });
+    if (!response.ok) return;
+    setIsFollowing(value => !value);
+    setFollowerCount(count => Math.max(0, count + (isFollowing ? -1 : 1)));
   };
 
   const sendDeal = async () => {
@@ -135,13 +143,7 @@ export default function InfluencerPublicProfile() {
     </div>
   );
 
-  if (!influencer) return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-      <AlertTriangle className="w-10 h-10 text-muted-foreground" />
-      <p className="text-muted-foreground">Influencer not found.</p>
-      <Link to="/" className="text-primary underline text-sm">Go Home</Link>
-    </div>
-  );
+  if (!influencer) return <Navigate to="/signup" replace state={{ from: window.location.pathname }} />;
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -191,6 +193,10 @@ export default function InfluencerPublicProfile() {
                   ))}
                 </div>
               )}
+
+              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                <span><b className="text-foreground">{followerCount}</b> followers</span>
+              </div>
 
               <div className="flex flex-wrap gap-2">
                 {isOwn ? (

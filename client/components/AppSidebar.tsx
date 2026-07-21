@@ -62,7 +62,7 @@ function getNavLinks(
     links.push({
       to: "/merchant",
       icon: <ShoppingBag className="w-4 h-4" />,
-      label: "Merchant Store",
+      label: "Merchant Tools",
       section: "Admin"
     });
   } else {
@@ -84,6 +84,7 @@ function getNavLinks(
   // Artist-only features (also available to artist_fan)
   if (hasArtist) {
     links.push(
+      { to: "/artist", icon: <LayoutDashboard className="w-4 h-4" />, label: "Artist Dashboard", section: "Artist Tools" },
       { to: "/broadcast", icon: <Mic className="w-4 h-4" />, label: "Go Live", section: "Artist Tools" },
       { to: "/past-streams", icon: <Radio className="w-4 h-4" />, label: "Past Streams", section: "Artist Tools" },
       { to: "/releases", icon: <Music className="w-4 h-4" />, label: "Releases", section: "Artist Tools" },
@@ -106,7 +107,7 @@ function getNavLinks(
   // Merchant-specific store management
   if (hasMerchant) {
     links.push(
-      { to: "/merchant", icon: <ShoppingBag className="w-4 h-4" />, label: "My Store", section: isAdmin ? "Admin" : "Merchant" },
+      { to: "/merchant", icon: <ShoppingBag className="w-4 h-4" />, label: "Merchant Tools", section: isAdmin ? "Admin" : "Merchant" },
     );
   }
 

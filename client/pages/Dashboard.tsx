@@ -119,7 +119,7 @@ export default function Dashboard({ viewAs }: { viewAs?: ProfileType } = {}) {
 
   const fetchFollowCounts = async () => {
     try {
-      const r = await fetch(`/api/social/follows?userId=${user?.id}`, { headers: { Authorization: `Bearer ${user?.id}` } });
+      const r = await fetch(`/api/social/stats?user_id=${user?.id}`, { headers: { Authorization: `Bearer ${user?.id}` } });
       const d = await r.json();
       if (d.success) {
         setFollowerCount(d.followerCount ?? 0);

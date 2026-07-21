@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, Navigate, useParams, useNavigate } from "react-router-dom";
 import {
   Radio, Mic, Music, Calendar, MapPin, Users,
   Star, ExternalLink, Instagram, Twitter, Coins,
@@ -112,8 +112,15 @@ export default function ArtistProfile() {
       const data = await res.json();
       if (data.success) {
         setArtist(data.artist);
-        setFollowerCount(data.artist.follower_count || 0);
-        if (user && data.followedByMe !== undefined) setIsFollowing(data.followedByMe);
+        const stats = await fetch(`/api/social/stats?user_id=${data.artist.id}`, {
+          headers: user ? { Authorization: `Bearer ${user.id}` } : undefined,
+        }).then(response => response.json());
+        if (stats.success) {
+          setFollowerCount(stats.followerCount ?? 0);
+          setIsFollowing(Boolean(stats.isFollowing));
+        } else if (data.followedByMe !== undefined) {
+          setIsFollowing(data.followedByMe);
+        }
       }
     } catch {}
     finally { setLoading(false); }
@@ -123,11 +130,12 @@ export default function ArtistProfile() {
     if (!user) { navigate("/signin"); return; }
     try {
       const method = isFollowing ? "DELETE" : "POST";
-      await fetch("/api/social/follow", {
+      const response = await fetch("/api/social/follow", {
         method,
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
         body: JSON.stringify({ followed_id: artist?.id }),
       });
+      if (!response.ok) return;
       setIsFollowing(!isFollowing);
       setFollowerCount(c => isFollowing ? c - 1 : c + 1);
     } catch {}
@@ -197,13 +205,7 @@ export default function ArtistProfile() {
     </div>
   );
 
-  if (!artist) return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-      <AlertTriangle className="w-10 h-10 text-muted-foreground" />
-      <p className="text-muted-foreground">Artist not found.</p>
-      <Link to="/" className="text-primary underline text-sm">Go Home</Link>
-    </div>
-  );
+  if (!artist) return <Navigate to="/signup" replace state={{ from: window.location.pathname }} />;
 
   const tabs = [
     { id: "about", label: "About" },

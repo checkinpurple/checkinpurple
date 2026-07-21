@@ -201,7 +201,7 @@ var notifyCoinTip = (artistId, fromUsername, amount) => createNotification({
 //#region server/routes/social.ts
 var getFollows = async (req, res) => {
 	try {
-		const userId = req.query.user_id;
+		const userId = req.query.user_id || req.query.userId;
 		if (!userId) return res.status(400).json({ error: "user_id required" });
 		const { data, error } = await supabase.from("follows").select("followed_id, users!follows_followed_id_fkey(id, username, avatar_url)").eq("follower_id", userId);
 		if (error) throw error;
@@ -214,17 +214,57 @@ var getFollows = async (req, res) => {
 		res.status(500).json({ error: "Failed to get follows" });
 	}
 };
+var getFollowStats = async (req, res) => {
+	try {
+		const userId = req.query.user_id;
+		const viewerId = req.user?.id;
+		if (!userId) return res.status(400).json({ error: "user_id required" });
+		const [{ count: followerCount, error: followersError }, { count: followingCount, error: followingError }] = await Promise.all([supabase.from("follows").select("id", {
+			count: "exact",
+			head: true
+		}).eq("followed_id", userId), supabase.from("follows").select("id", {
+			count: "exact",
+			head: true
+		}).eq("follower_id", userId)]);
+		if (followersError || followingError) throw followersError || followingError;
+		let isFollowing = false;
+		if (viewerId && viewerId !== userId) {
+			const { data, error } = await supabase.from("follows").select("id").eq("follower_id", viewerId).eq("followed_id", userId).maybeSingle();
+			if (error) throw error;
+			isFollowing = Boolean(data);
+		}
+		res.json({
+			success: true,
+			followerCount: followerCount ?? 0,
+			followingCount: followingCount ?? 0,
+			isFollowing
+		});
+	} catch (error) {
+		console.error("Error getting follow stats:", error);
+		res.status(500).json({ error: "Failed to get follow stats" });
+	}
+};
 var followUser = async (req, res) => {
 	try {
 		const { followed_id } = req.body;
 		const follower_id = req.user?.id;
 		if (!follower_id || !followed_id) return res.status(400).json({ error: "Invalid request" });
-		const { data, error } = await supabase.from("follows").insert({
+		const { data, error } = await supabase.from("follows").upsert({
 			follower_id,
 			followed_id
-		}).select().single();
+		}, {
+			onConflict: "follower_id,followed_id",
+			ignoreDuplicates: true
+		}).select().maybeSingle();
 		if (error) throw error;
-		res.json(data);
+		try {
+			const { data: follower } = await supabase.from("users").select("username").eq("id", follower_id).single();
+			await notifyNewFollower(followed_id, follower?.username || "Someone");
+		} catch {}
+		res.json({
+			success: true,
+			follow: data
+		});
 	} catch (error) {
 		console.error("Error following user:", error);
 		res.status(500).json({ error: "Failed to follow user" });
@@ -237,10 +277,6 @@ var unfollowUser = async (req, res) => {
 		if (!follower_id || !followed_id) return res.status(400).json({ error: "Invalid request" });
 		const { error } = await supabase.from("follows").delete().eq("follower_id", follower_id).eq("followed_id", followed_id);
 		if (error) throw error;
-		try {
-			const { data: follower } = await supabase.from("users").select("username").eq("id", follower_id).single();
-			await notifyNewFollower(followed_id, follower?.username || "Someone");
-		} catch {}
 		res.json({ success: true });
 	} catch (error) {
 		console.error("Error unfollowing user:", error);
@@ -1014,6 +1050,27 @@ var upsertArtistProfile = async (req, res) => {
 		res.status(500).json({ error: "Failed to update artist profile" });
 	}
 };
+var getArtistProfileByUsername = async (req, res) => {
+	try {
+		const username = req.params.username;
+		if (!username) return res.status(400).json({ error: "username required" });
+		const { data: user, error: userError } = await supabase.from("users").select("id, username, avatar_url, role, is_verified").eq("username", username).maybeSingle();
+		if (userError) throw userError;
+		if (!user) return res.status(404).json({ error: "Artist not found" });
+		const { data: artist, error } = await supabase.from("artist_profiles").select("*").eq("user_id", user.id).maybeSingle();
+		if (error) throw error;
+		res.json({
+			success: true,
+			artist: {
+				...user,
+				...artist || {}
+			}
+		});
+	} catch (error) {
+		console.error("Error getting artist profile by username:", error);
+		res.status(500).json({ error: "Failed to get artist profile" });
+	}
+};
 var getArtistProfile = async (req, res) => {
 	try {
 		const artistId = req.params.artistId;
@@ -1715,6 +1772,7 @@ function createServer() {
 	app.post("/api/profiles", addProfile);
 	app.post("/api/profiles/switch", switchActiveProfile);
 	app.put("/api/artist/profile", upsertArtistProfile);
+	app.get("/api/artist/profile/:username", getArtistProfileByUsername);
 	app.get("/api/artist/:artistId/profile", getArtistProfile);
 	app.post("/api/artist/events", createArtistEvent);
 	app.get("/api/artist/:artistId/events", listArtistEvents);
@@ -1723,6 +1781,7 @@ function createServer() {
 	app.get("/api/bookings", listMyBookingRequests);
 	app.patch("/api/bookings/:id", updateBookingRequestStatus);
 	app.get("/api/social/follows", getFollows);
+	app.get("/api/social/stats", getFollowStats);
 	app.post("/api/social/follow", followUser);
 	app.delete("/api/social/follow", unfollowUser);
 	app.get("/api/social/likes", getLikes);

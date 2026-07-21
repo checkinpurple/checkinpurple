@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Edit, MapPin, MessageCircle, ShoppingBag, Store, UserPlus } from "lucide-react";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Edit, MapPin, MessageCircle, ShoppingBag, Store, UserPlus, UserCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import AppSidebar from "@/components/AppSidebar";
@@ -21,6 +21,8 @@ export default function MerchantProfile() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [merchant, setMerchant] = useState<MerchantUser | null>(null);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const isOwn = user?.username === username || user?.id === merchant?.id;
 
@@ -34,6 +36,15 @@ export default function MerchantProfile() {
           .eq("username", username)
           .single();
         setMerchant(data || null);
+        if (data) {
+          const stats = await fetch(`/api/social/stats?user_id=${data.id}`, {
+            headers: user ? { Authorization: `Bearer ${user.id}` } : undefined,
+          }).then(response => response.json());
+          if (stats.success) {
+            setFollowerCount(stats.followerCount ?? 0);
+            setIsFollowing(Boolean(stats.isFollowing));
+          }
+        }
       } finally {
         setLoading(false);
       }
@@ -43,13 +54,21 @@ export default function MerchantProfile() {
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" /></div>;
 
-  if (!merchant) return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-      <Store className="w-10 h-10 text-muted-foreground" />
-      <p className="text-muted-foreground">Merchant profile not found.</p>
-      <Link to="/store" className="text-primary underline text-sm">Browse Store</Link>
-    </div>
-  );
+  const toggleFollow = async () => {
+    if (!user) { navigate("/signin"); return; }
+    if (!merchant) return;
+    const method = isFollowing ? "DELETE" : "POST";
+    const response = await fetch("/api/social/follow", {
+      method,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
+      body: JSON.stringify({ followed_id: merchant.id }),
+    });
+    if (!response.ok) return;
+    setIsFollowing(value => !value);
+    setFollowerCount(count => Math.max(0, count + (isFollowing ? -1 : 1)));
+  };
+
+  if (!merchant) return <Navigate to="/signup" replace state={{ from: window.location.pathname }} />;
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -79,6 +98,9 @@ export default function MerchantProfile() {
                 </div>
                 {merchant.location && <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3"><MapPin className="w-3 h-3" /> {merchant.location}</p>}
                 <p className="text-sm text-muted-foreground mb-4">{merchant.bio || "Merchant profile for merch, fashion, styling, services and creator collaborations."}</p>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                  <span><b className="text-foreground">{followerCount}</b> followers</span>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {isOwn ? (
                     <>
@@ -89,7 +111,9 @@ export default function MerchantProfile() {
                     <>
                       <Link to="/store" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90"><ShoppingBag className="w-4 h-4" /> Shop Drops</Link>
                       <Link to="/messages" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/40 bg-card/40 text-sm font-semibold hover:bg-card/60"><MessageCircle className="w-4 h-4" /> Message</Link>
-                      <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/40 bg-card/40 text-sm font-semibold text-muted-foreground hover:text-foreground"><UserPlus className="w-4 h-4" /> Follow</button>
+                      <button onClick={toggleFollow} className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/40 bg-card/40 text-sm font-semibold ${isFollowing ? "text-muted-foreground hover:text-foreground" : "text-foreground hover:bg-card/60"}`}>
+                        {isFollowing ? <><UserCheck className="w-4 h-4" /> Following</> : <><UserPlus className="w-4 h-4" /> Follow</>}
+                      </button>
                     </>
                   )}
                 </div>

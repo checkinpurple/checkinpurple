@@ -6,7 +6,7 @@ import { notifyNewFollower } from "./notifications";
 // Get follows for a user
 export const getFollows: RequestHandler = async (req, res) => {
   try {
-    const userId = req.query.user_id as string;
+    const userId = (req.query.user_id || req.query.userId) as string;
     if (!userId) {
       return res.status(400).json({ error: "user_id required" });
     }
@@ -24,6 +24,32 @@ export const getFollows: RequestHandler = async (req, res) => {
   }
 };
 
+export const getFollowStats: RequestHandler = async (req, res) => {
+  try {
+    const userId = req.query.user_id as string;
+    const viewerId = req.user?.id;
+    if (!userId) return res.status(400).json({ error: "user_id required" });
+
+    const [{ count: followerCount, error: followersError }, { count: followingCount, error: followingError }] = await Promise.all([
+      supabase.from("follows").select("id", { count: "exact", head: true }).eq("followed_id", userId),
+      supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", userId),
+    ]);
+    if (followersError || followingError) throw followersError || followingError;
+
+    let isFollowing = false;
+    if (viewerId && viewerId !== userId) {
+      const { data, error } = await supabase.from("follows").select("id").eq("follower_id", viewerId).eq("followed_id", userId).maybeSingle();
+      if (error) throw error;
+      isFollowing = Boolean(data);
+    }
+
+    res.json({ success: true, followerCount: followerCount ?? 0, followingCount: followingCount ?? 0, isFollowing });
+  } catch (error) {
+    console.error("Error getting follow stats:", error);
+    res.status(500).json({ error: "Failed to get follow stats" });
+  }
+};
+
 // Follow a user
 export const followUser: RequestHandler = async (req, res) => {
   try {
@@ -36,12 +62,16 @@ export const followUser: RequestHandler = async (req, res) => {
 
     const { data, error } = await supabase
       .from("follows")
-      .insert({ follower_id, followed_id })
+      .upsert({ follower_id, followed_id }, { onConflict: "follower_id,followed_id", ignoreDuplicates: true })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
-    res.json(data);
+    try {
+      const { data: follower } = await supabase.from("users").select("username").eq("id", follower_id).single();
+      await notifyNewFollower(followed_id, follower?.username || "Someone");
+    } catch {}
+    res.json({ success: true, follow: data });
   } catch (error) {
     console.error("Error following user:", error);
     res.status(500).json({ error: "Failed to follow user" });
@@ -65,12 +95,6 @@ export const unfollowUser: RequestHandler = async (req, res) => {
       .eq("followed_id", followed_id);
 
     if (error) throw error;
-    // Notify the person being followed
-    try {
-      const { data: follower } = await supabase.from("users").select("username").eq("id", follower_id).single();
-      await notifyNewFollower(followed_id, follower?.username || "Someone");
-    } catch {}
-
     res.json({ success: true });
   } catch (error) {
     console.error("Error unfollowing user:", error);

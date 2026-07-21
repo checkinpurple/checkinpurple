@@ -11,6 +11,7 @@ import {
 } from "./routes/streams";
 import {
   getFollows,
+  getFollowStats,
   followUser,
   unfollowUser,
   getLikes,
@@ -43,6 +44,7 @@ import { getMyProfiles, addProfile, switchActiveProfile } from "./routes/profile
 import {
   upsertArtistProfile,
   getArtistProfile,
+  getArtistProfileByUsername,
   createArtistEvent,
   listArtistEvents,
   getFanUpdates,
@@ -135,6 +137,7 @@ export function createServer() {
 
   // Artist profile & updates
   app.put("/api/artist/profile", upsertArtistProfile);
+  app.get("/api/artist/profile/:username", getArtistProfileByUsername);
   app.get("/api/artist/:artistId/profile", getArtistProfile);
   app.post("/api/artist/events", createArtistEvent);
   app.get("/api/artist/:artistId/events", listArtistEvents);
@@ -147,6 +150,7 @@ export function createServer() {
 
   // Social routes
   app.get("/api/social/follows", getFollows);
+  app.get("/api/social/stats", getFollowStats);
   app.post("/api/social/follow", followUser);
   app.delete("/api/social/follow", unfollowUser);
   app.get("/api/social/likes", getLikes);
