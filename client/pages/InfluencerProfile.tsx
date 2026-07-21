@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, Navigate, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, TrendingUp, Users, Star, ExternalLink,
   Instagram, Twitter, Globe, Coins, AlertTriangle,
@@ -143,13 +143,7 @@ export default function InfluencerPublicProfile() {
     </div>
   );
 
-  if (!influencer) return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-      <AlertTriangle className="w-10 h-10 text-muted-foreground" />
-      <p className="text-muted-foreground">Influencer not found.</p>
-      <Link to="/" className="text-primary underline text-sm">Go Home</Link>
-    </div>
-  );
+  if (!influencer) return <Navigate to="/signup" replace state={{ from: window.location.pathname }} />;
 
   return (
     <div className="min-h-screen bg-background flex">

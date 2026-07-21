@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, Navigate, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Headphones, Users, Heart, Music,
   Calendar, UserPlus, UserCheck, Radio, AlertTriangle,
@@ -150,13 +150,7 @@ export default function FanProfile() {
     </div>
   );
 
-  if (!fan) return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-      <AlertTriangle className="w-10 h-10 text-muted-foreground" />
-      <p className="text-muted-foreground">Fan profile not found.</p>
-      <Link to="/" className="text-primary underline text-sm">Go Home</Link>
-    </div>
-  );
+  if (!fan) return <Navigate to="/signup" replace state={{ from: window.location.pathname }} />;
 
   return (
     <div className="min-h-screen bg-background flex">

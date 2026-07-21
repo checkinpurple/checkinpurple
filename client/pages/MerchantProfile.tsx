@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Edit, MapPin, MessageCircle, ShoppingBag, Store, UserPlus, UserCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -68,13 +68,7 @@ export default function MerchantProfile() {
     setFollowerCount(count => Math.max(0, count + (isFollowing ? -1 : 1)));
   };
 
-  if (!merchant) return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-      <Store className="w-10 h-10 text-muted-foreground" />
-      <p className="text-muted-foreground">Merchant profile not found.</p>
-      <Link to="/store" className="text-primary underline text-sm">Browse Store</Link>
-    </div>
-  );
+  if (!merchant) return <Navigate to="/signup" replace state={{ from: window.location.pathname }} />;
 
   return (
     <div className="min-h-screen bg-background flex">

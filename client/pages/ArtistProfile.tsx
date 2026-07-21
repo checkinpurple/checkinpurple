@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, Navigate, useParams, useNavigate } from "react-router-dom";
 import {
   Radio, Mic, Music, Calendar, MapPin, Users,
   Star, ExternalLink, Instagram, Twitter, Coins,
@@ -205,13 +205,7 @@ export default function ArtistProfile() {
     </div>
   );
 
-  if (!artist) return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-      <AlertTriangle className="w-10 h-10 text-muted-foreground" />
-      <p className="text-muted-foreground">Artist not found.</p>
-      <Link to="/" className="text-primary underline text-sm">Go Home</Link>
-    </div>
-  );
+  if (!artist) return <Navigate to="/signup" replace state={{ from: window.location.pathname }} />;
 
   const tabs = [
     { id: "about", label: "About" },
