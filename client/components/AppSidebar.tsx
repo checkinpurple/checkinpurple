@@ -29,7 +29,7 @@ function getNavLinks(
   const links: SidebarLink[] = [];
   const profileContext = activeProfile;
   const hasArtist = isAdmin || profileContext === "artist" || profileContext === "artist_fan";
-  const hasFan = isAdmin || profileContext === "fan" || profileContext === "artist_fan";
+  const hasFan = true;
   const hasInfluencer = isAdmin || profileContext === "influencer";
   const hasMerchant = isAdmin || profileContext === "merchant";
 
@@ -111,7 +111,7 @@ function getNavLinks(
     );
   }
 
-  // Discovery features are grouped by the active profile so the sidebar does not mix unrelated tools.
+  // Discovery features are available to every signed-in profile.
   if (hasFan || hasInfluencer || hasMerchant || isAdmin) {
     links.push({ to: "/listen", icon: <Headphones className="w-4 h-4" />, label: "Discover Music", section: isAdmin ? "Fan Tools" : "Discover" });
   }

@@ -5,11 +5,11 @@ import { supabase, DatabaseStream } from "../lib/supabase";
 
 export const createStream: RequestHandler = async (req, res) => {
   try {
-    const { userId, title, genre } = req.body;
+    const userId = req.user?.id;
+    const { title, genre } = req.body;
 
-    if (!userId || !title) {
-      return res.status(400).json({ error: "userId and title required" });
-    }
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!title) return res.status(400).json({ error: "title required" });
 
     const streamId = `stream_${Date.now()}`;
 
@@ -62,7 +62,9 @@ export const createStream: RequestHandler = async (req, res) => {
 export const endStream: RequestHandler = async (req, res) => { /* unchanged */
   try {
     const { streamId } = req.params;
-    const { data, error } = await supabase.from('streams').update({ status:'ended', ended_at:new Date().toISOString(), listener_count:0 }).eq('id', streamId).eq('status','live').select().single();
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const { data, error } = await supabase.from('streams').update({ status:'ended', ended_at:new Date().toISOString(), listener_count:0 }).eq('id', streamId).eq('user_id', userId).eq('status','live').select().single();
     if (error) return res.status(404).json({ error: "Stream not found or already ended" });
     res.json({ success: true, message: "Stream ended and cache cleared" });
   } catch (error) { res.status(500).json({ error: "Failed to end stream" }); }
