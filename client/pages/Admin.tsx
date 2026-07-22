@@ -302,7 +302,14 @@ export default function Admin() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <Link to="/artist" className="group p-4 rounded-3xl border border-purple-500/30 bg-card/30 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-3">
+                <Music className="w-5 h-5 text-purple-400" />
+              </div>
+              <p className="font-semibold">Artist Dashboard</p>
+              <p className="text-xs text-muted-foreground">Open the artist studio.</p>
+            </Link>
             <Link to="/fan" className="group p-4 rounded-3xl border border-border/40 bg-card/30 hover:border-primary/40 hover:bg-primary/5 transition-all">
               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
                 <Users className="w-5 h-5 text-primary" />

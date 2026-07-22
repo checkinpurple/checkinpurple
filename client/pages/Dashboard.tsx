@@ -88,7 +88,7 @@ export default function Dashboard({ viewAs }: { viewAs?: ProfileType } = {}) {
 
   const isAdmin = user.role === "admin";
   const isArtist = displayProfile === "artist" || displayProfile === "artist_fan";
-  const isFan = displayProfile === "fan" || displayProfile === "artist_fan";
+  const isFan = true;
   const isInfluencer = displayProfile === "influencer";
   const isMerchant = displayProfile === "merchant";
 

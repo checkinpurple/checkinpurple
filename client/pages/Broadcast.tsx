@@ -286,7 +286,7 @@ export default function Broadcast() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: user?.id, title: streamTitle, genre,
+          title: streamTitle, genre,
           livepeerStreamId: livepeerData?.livepeerStreamId,
           playbackId: livepeerData?.playbackId,
         }),
@@ -313,7 +313,10 @@ export default function Broadcast() {
     if (!streamId) return;
     setLoading(true);
     try {
-      await fetch(`/api/streams/${streamId}`, { method: "DELETE" });
+      await fetch(`/api/streams/${streamId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${user?.id}` },
+      });
       stopLivepeerBrowserBroadcast();
       setIsLive(false); setStreamId(null); setListenerCount(0); setIsPlaying(false);
     } catch (err) {

@@ -20,8 +20,10 @@ var supabase = createClient(supabaseUrl || "http://localhost:54321", supabaseSer
 //#region server/routes/streams.ts
 var createStream = async (req, res) => {
 	try {
-		const { userId, title, genre } = req.body;
-		if (!userId || !title) return res.status(400).json({ error: "userId and title required" });
+		const userId = req.user?.id;
+		const { title, genre } = req.body;
+		if (!userId) return res.status(401).json({ error: "Unauthorized" });
+		if (!title) return res.status(400).json({ error: "title required" });
 		const streamData = {
 			id: `stream_${Date.now()}`,
 			user_id: userId,
@@ -65,11 +67,13 @@ var createStream = async (req, res) => {
 var endStream = async (req, res) => {
 	try {
 		const { streamId } = req.params;
+		const userId = req.user?.id;
+		if (!userId) return res.status(401).json({ error: "Unauthorized" });
 		const { data, error } = await supabase.from("streams").update({
 			status: "ended",
 			ended_at: (/* @__PURE__ */ new Date()).toISOString(),
 			listener_count: 0
-		}).eq("id", streamId).eq("status", "live").select().single();
+		}).eq("id", streamId).eq("user_id", userId).eq("status", "live").select().single();
 		if (error) return res.status(404).json({ error: "Stream not found or already ended" });
 		res.json({
 			success: true,
