@@ -31,7 +31,7 @@ var createStream = async (req, res) => {
 			status: "live",
 			listener_count: 0,
 			started_at: (/* @__PURE__ */ new Date()).toISOString(),
-			livepeer_stream_id: req.body.livepeerStreamId || null,
+			livepeer_stream_id: req.body.muxStreamId || null,
 			livepeer_playback_id: req.body.playbackId || null
 		};
 		const wallMetadata = {
@@ -55,8 +55,9 @@ var createStream = async (req, res) => {
 			stream: {
 				id: data.id,
 				title: data.title,
-				livepeerStreamId: data.livepeer_stream_id,
-				playbackId: data.livepeer_playback_id
+				muxStreamId: data.livepeer_stream_id,
+				playbackId: data.livepeer_playback_id,
+				playbackUrl: data.livepeer_playback_id ? `https://stream.mux.com/${data.livepeer_playback_id}.m3u8` : null
 			}
 		});
 	} catch (error) {
@@ -93,8 +94,9 @@ var getStream = async (req, res) => {
 			stream: {
 				id: data.id,
 				title: data.title,
-				livepeerStreamId: data.livepeer_stream_id,
+				muxStreamId: data.livepeer_stream_id,
 				playbackId: data.livepeer_playback_id,
+				playbackUrl: data.livepeer_playback_id ? `https://stream.mux.com/${data.livepeer_playback_id}.m3u8` : null,
 				listenerCount: data.listener_count,
 				startedAt: data.started_at
 			}
@@ -135,6 +137,7 @@ var listActiveStreams = async (_req, res) => {
 					listenerCount: stream.listener_count,
 					startedAt: stream.started_at,
 					playbackId: stream.livepeer_playback_id,
+					playbackUrl: stream.livepeer_playback_id ? `https://stream.mux.com/${stream.livepeer_playback_id}.m3u8` : null,
 					username: artist?.username,
 					avatar_url: artist?.avatar_url
 				};
@@ -1232,47 +1235,48 @@ var updateBookingRequestStatus = async (req, res) => {
 };
 //#endregion
 //#region server/routes/livepeer.ts
-var createLivepeerStreamKey = async (req, res) => {
+var MUX_INGEST_URL = "rtmp://global-live.mux.com:5222/app";
+var createMuxStreamKey = async (req, res) => {
 	try {
 		const userId = req.user?.id;
 		if (!userId) return res.status(401).json({ error: "Unauthorized" });
-		const apiKey = process.env.LIVEPEER_API_KEY || process.env.VITE_LIVEPEER_API_KEY;
-		if (!apiKey) return res.status(500).json({ error: "LIVEPEER_API_KEY is not configured in environment variables" });
+		const tokenId = process.env.MUX_TOKEN_ID;
+		const tokenSecret = process.env.MUX_TOKEN_SECRET;
+		if (!tokenId || !tokenSecret) return res.status(500).json({ error: "MUX_TOKEN_ID and MUX_TOKEN_SECRET are not configured" });
 		const name = req.body?.name || `checkinpurple_${userId}_${Date.now()}`;
-		const response = await fetch("https://livepeer.studio/api/stream", {
+		const body = {
+			playback_policy: ["public"],
+			reduced_latency: true,
+			test: false
+		};
+		if (req.body?.record === true) body.new_asset_settings = { playback_policy: ["public"] };
+		const response = await fetch("https://api.mux.com/video/v1/live-streams", {
 			method: "POST",
 			headers: {
-				Authorization: `Bearer ${apiKey}`,
+				Authorization: `Basic ${Buffer.from(`${tokenId}:${tokenSecret}`).toString("base64")}`,
 				"Content-Type": "application/json"
 			},
 			body: JSON.stringify({
-				name,
-				record: req.body?.record === true
+				...body,
+				passthrough: name
 			})
 		});
-		const text = await response.text().catch(() => "");
-		let data = null;
-		try {
-			data = text ? JSON.parse(text) : null;
-		} catch {
-			data = null;
-		}
-		if (!response.ok) return res.status(response.status).json({ error: data && (data.error || data.message) || text || "Failed to create Livepeer stream" });
-		const streamKey = typeof data?.streamKey === "object" ? data.streamKey.value || data.streamKey : data?.streamKey || (typeof data?.stream_key === "object" ? data.stream_key.value || data.stream_key : data?.stream_key);
-		const playbackId = typeof data?.playbackId === "object" ? data.playbackId.value || data.playbackId : data?.playbackId || (typeof data?.playback_id === "object" ? data.playback_id.value || data.playback_id : data?.playback_id);
-		if (!streamKey) return res.status(500).json({
-			error: "Livepeer returned an invalid stream key",
-			details: data
-		});
+		const data = await response.json().catch(() => null);
+		if (!response.ok) return res.status(response.status).json({ error: data?.error?.messages?.join(", ") || data?.error || "Failed to create Mux stream" });
+		const liveStream = data?.data;
+		const playbackId = liveStream?.playback_ids?.[0]?.id;
+		if (!liveStream?.stream_key || !playbackId) return res.status(502).json({ error: "Mux returned incomplete stream credentials" });
 		res.json({
 			success: true,
-			streamKey,
+			streamKey: liveStream.stream_key,
 			playbackId,
-			livepeerStreamId: data?.id
+			livepeerStreamId: liveStream.id,
+			rtmpIngestUrl: MUX_INGEST_URL,
+			playbackUrl: `https://stream.mux.com/${playbackId}.m3u8`
 		});
 	} catch (error) {
-		console.error("Livepeer stream key error:", error);
-		res.status(500).json({ error: "Failed to create Livepeer stream key" });
+		console.error("Mux stream key error:", error);
+		res.status(500).json({ error: "Failed to create Mux stream key" });
 	}
 };
 //#endregion
@@ -1771,7 +1775,7 @@ function createServer() {
 	app.get("/api/streams/:streamId", getStream);
 	app.post("/api/streams/:streamId/listeners", updateListenerCount);
 	app.delete("/api/streams/:streamId", endStream);
-	app.post("/api/stream/livepeer-key", createLivepeerStreamKey);
+	app.post("/api/stream/mux-key", createMuxStreamKey);
 	app.get("/api/profiles", getMyProfiles);
 	app.post("/api/profiles", addProfile);
 	app.post("/api/profiles/switch", switchActiveProfile);

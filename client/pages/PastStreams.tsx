@@ -97,7 +97,7 @@ export default function PastStreams() {
   };
 
   const playbackUrl = (playbackId: string) =>
-    `https://lvpr.tv/?v=${playbackId}`;
+    `https://stream.mux.com/${playbackId}.m3u8`;
 
   return (
     <div className="min-h-screen bg-background flex">

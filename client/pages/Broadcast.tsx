@@ -25,16 +25,14 @@ export default function Broadcast() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
   const analyserNodeRef = useRef<AnalyserNode | null>(null);
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const canvasStreamRef = useRef<MediaStream | null>(null);
-
   const [isLive, setIsLive] = useState(false);
   const [listenerCount, setListenerCount] = useState(0);
   const [streamTitle, setStreamTitle] = useState("");
   const [isMuted, setIsMuted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [streamId, setStreamId] = useState<string | null>(null);
-  const [livepeerStreamKey, setLivepeerStreamKey] = useState<string | null>(null);
+  const [muxStreamKey, setMuxStreamKey] = useState<string | null>(null);
+  const [rtmpIngestUrl, setRtmpIngestUrl] = useState<string | null>(null);
   const [playbackId, setPlaybackId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,7 +40,7 @@ export default function Broadcast() {
   const [streamPrivacy, setStreamPrivacy] = useState<"public" | "followers" | "private">("public");
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
-  const [broadcastStatus, setBroadcastStatus] = useState("Browser audio will be sent to Livepeer when you go live.");
+  const [broadcastStatus, setBroadcastStatus] = useState("Mux will provide an RTMP endpoint for OBS or a mobile broadcast app.");
 
   // Track state
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -154,98 +152,9 @@ export default function Broadcast() {
   };
 
 
-  const waitForIceGatheringComplete = (peerConnection: RTCPeerConnection) =>
-    new Promise<void>((resolve) => {
-      if (peerConnection.iceGatheringState === "complete") {
-        resolve();
-        return;
-      }
-      const onStateChange = () => {
-        if (peerConnection.iceGatheringState === "complete") {
-          peerConnection.removeEventListener("icegatheringstatechange", onStateChange);
-          resolve();
-        }
-      };
-      peerConnection.addEventListener("icegatheringstatechange", onStateChange);
-      setTimeout(() => {
-        peerConnection.removeEventListener("icegatheringstatechange", onStateChange);
-        resolve();
-      }, 3000);
-    });
-
-  const createSilentVideoTrack = () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1280;
-    canvas.height = 720;
-    const context = canvas.getContext("2d");
-    if (context) {
-      context.fillStyle = "#16051f";
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      context.fillStyle = "#ffffff";
-      context.font = "48px sans-serif";
-      context.textAlign = "center";
-      context.fillText("CheckinPurple Live", canvas.width / 2, canvas.height / 2);
-    }
-    const stream = canvas.captureStream(1);
-    canvasStreamRef.current = stream;
-    return stream.getVideoTracks()[0];
-  };
-
-  const startLivepeerBrowserBroadcast = async (streamKey: string) => {
-    const audio = audioRef.current;
-    if (!audio) throw new Error("Audio player is not ready");
-    const captureStream = (audio as HTMLAudioElement & { captureStream?: () => MediaStream; mozCaptureStream?: () => MediaStream }).captureStream?.() ||
-      (audio as HTMLAudioElement & { mozCaptureStream?: () => MediaStream }).mozCaptureStream?.();
-    if (!captureStream) {
-      throw new Error("Your browser cannot capture the audio player. Please use Chrome/Edge or OBS with the Livepeer key.");
-    }
-    const audioTrack = captureStream.getAudioTracks()[0];
-    if (!audioTrack) throw new Error("No audio track is available to broadcast");
-
-    const redirectResponse = await fetch(`https://livepeer.studio/webrtc/${streamKey}`, { method: "HEAD" });
-    const ingestUrl = redirectResponse.url || `https://livepeer.studio/webrtc/${streamKey}`;
-    const host = new URL(ingestUrl).host;
-    const peerConnection = new RTCPeerConnection({
-      iceServers: [
-        { urls: `stun:${host}` },
-        { urls: `turn:${host}`, username: "livepeer", credential: "livepeer" },
-      ],
-    });
-    peerConnectionRef.current = peerConnection;
-    peerConnection.addTrack(audioTrack, captureStream);
-    const videoTrack = createSilentVideoTrack();
-    if (videoTrack) peerConnection.addTrack(videoTrack, canvasStreamRef.current!);
-
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    await waitForIceGatheringComplete(peerConnection);
-
-    const whipResponse = await fetch(ingestUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/sdp" },
-      body: peerConnection.localDescription?.sdp || offer.sdp,
-    });
-    if (!whipResponse.ok) {
-      const details = await whipResponse.text().catch(() => "");
-      throw new Error(details || "Livepeer rejected the browser broadcast");
-    }
-    const answer = await whipResponse.text();
-    await peerConnection.setRemoteDescription({ type: "answer", sdp: answer });
-    setBroadcastStatus("Livepeer is receiving your browser audio stream.");
-  };
-
-  const stopLivepeerBrowserBroadcast = () => {
-    peerConnectionRef.current?.getSenders().forEach(sender => sender.track?.stop());
-    peerConnectionRef.current?.close();
-    peerConnectionRef.current = null;
-    canvasStreamRef.current?.getTracks().forEach(track => track.stop());
-    canvasStreamRef.current = null;
-    setBroadcastStatus("Browser audio will be sent to Livepeer when you go live.");
-  };
-
-  const getLivepeerStreamKey = async () => {
+  const getMuxStreamKey = async () => {
     try {
-      const res = await fetch("/api/stream/livepeer-key", {
+      const res = await fetch("/api/stream/mux-key", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${user?.id}` },
         body: JSON.stringify({ name: streamTitle || undefined, record: saveStream }),
@@ -253,42 +162,46 @@ export default function Broadcast() {
       const text = await res.text();
       let data: any = null;
       try { data = text ? JSON.parse(text) : null; } catch {
-        if (!res.ok) { setError(text || "Failed to create Livepeer stream"); return null; }
-        setError("Livepeer response was not valid JSON"); return null;
+        if (!res.ok) { setError(text || "Failed to create Mux stream"); return null; }
+        setError("Mux response was not valid JSON"); return null;
       }
-      if (!res.ok) { setError((data && (data.error || data.message)) || "Failed to create Livepeer stream"); return null; }
+      if (!res.ok) { setError((data && (data.error || data.message)) || "Failed to create Mux stream"); return null; }
       const streamKey = typeof data?.streamKey === "object" ? data.streamKey.value || data.streamKey : data?.streamKey;
       const pbId = typeof data?.playbackId === "object" ? data.playbackId.value || data.playbackId : data?.playbackId;
-      if (streamKey) { setLivepeerStreamKey(streamKey); setPlaybackId(pbId); return data; }
-      setError("Livepeer returned an invalid stream key");
+      if (streamKey) {
+        setMuxStreamKey(streamKey);
+        setRtmpIngestUrl(data.rtmpIngestUrl);
+        setPlaybackId(pbId);
+        setBroadcastStatus("Copy the Mux RTMP details into OBS or your mobile broadcast app.");
+        return data;
+      }
+      setError("Mux returned an invalid stream key");
     } catch (err) {
-      console.error("Livepeer key error:", err);
-      setError("Unable to create Livepeer stream key");
+      console.error("Mux key error:", err);
+      setError("Unable to create Mux stream key");
     }
     return null;
   };
 
   const handleGoLive = async () => {
     if (!streamTitle.trim()) { setError("Please enter a stream title"); return; }
-    if (tracks.length === 0) { setError("Upload at least one track before going live"); return; }
     setLoading(true); setError("");
     try {
       ensureAudioSetup();
       audioContextRef.current?.resume().catch(() => {});
-      const livepeerData = await getLivepeerStreamKey();
-      if (!livepeerData) throw new Error("Could not generate Livepeer stream key");
+      const muxData = await getMuxStreamKey();
+      if (!muxData) throw new Error("Could not generate Mux stream key");
       if (currentTrack && !isPlaying) {
         setIsPlaying(true);
         await audioRef.current?.play().catch(err => console.warn("Playback blocked:", err));
       }
-      await startLivepeerBrowserBroadcast(livepeerData.streamKey);
       const res = await fetch("/api/streams", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user?.id}` },
         body: JSON.stringify({
           title: streamTitle, genre,
-          livepeerStreamId: livepeerData?.livepeerStreamId,
-          playbackId: livepeerData?.playbackId,
+          muxStreamId: muxData?.muxStreamId,
+          playbackId: muxData?.playbackId,
         }),
       });
       const data = await res.json();
@@ -302,7 +215,6 @@ export default function Broadcast() {
       }, 3000);
       return () => clearInterval(interval);
     } catch (err) {
-      stopLivepeerBrowserBroadcast();
       setError(err instanceof Error ? err.message : "Failed to go live");
     } finally {
       setLoading(false);
@@ -317,7 +229,6 @@ export default function Broadcast() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${user?.id}` },
       });
-      stopLivepeerBrowserBroadcast();
       setIsLive(false); setStreamId(null); setListenerCount(0); setIsPlaying(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to end stream");
@@ -378,21 +289,21 @@ export default function Broadcast() {
             </div>
           </div>
 
-          {/* Livepeer key info */}
-          {isLive && livepeerStreamKey && (
+          {/* Mux key info */}
+          {isLive && muxStreamKey && (
             <div className="glass rounded-xl p-4 border border-primary/20">
               <p className="text-sm font-semibold text-primary mb-1 flex items-center gap-2">
-                <Zap className="w-4 h-4" /> Livepeer Stream Active
+                <Zap className="w-4 h-4" /> Mux Stream Ready
               </p>
-              <p className="text-xs text-muted-foreground mb-2">{broadcastStatus} OBS backup details:</p>
+              <p className="text-xs text-muted-foreground mb-2">{broadcastStatus}</p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-card/40 rounded-lg p-2">
                   <p className="text-muted-foreground">RTMP URL</p>
-                  <p className="font-mono text-foreground">rtmp://rtmp.livepeer.com/live</p>
+                  <p className="font-mono text-foreground">{rtmpIngestUrl}</p>
                 </div>
                 <div className="bg-card/40 rounded-lg p-2">
                   <p className="text-muted-foreground">Stream Key</p>
-                  <p className="font-mono text-foreground truncate">{livepeerStreamKey}</p>
+                  <p className="font-mono text-foreground truncate">{muxStreamKey}</p>
                 </div>
               </div>
             </div>
