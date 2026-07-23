@@ -52,7 +52,7 @@ import {
   listMyBookingRequests,
   updateBookingRequestStatus,
 } from "./routes/artist";
-import { createLivepeerStreamKey } from "./routes/livepeer";
+import { createMuxStreamKey } from "./routes/livepeer";
 import { listUsers, updateUserRole, setUserBanned, listSubmissions } from "./routes/admin";
 import { listParties } from "./routes/parties";
 // playlists imported below with full set (avoids duplicate declarations)
@@ -127,8 +127,8 @@ export function createServer() {
   app.post("/api/streams/:streamId/listeners", updateListenerCount);
   app.delete("/api/streams/:streamId", endStream);
 
-  // Livepeer
-  app.post("/api/stream/livepeer-key", createLivepeerStreamKey);
+  // Mux Live
+  app.post("/api/stream/mux-key", createMuxStreamKey);
 
   // Profiles
   app.get("/api/profiles", getMyProfiles);

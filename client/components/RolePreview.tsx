@@ -48,7 +48,7 @@ const ROLE_PREVIEWS: Record<PreviewRole, {
     icon: <Mic className="w-5 h-5" />,
     tagline: "Stream live, grow your audience, earn from your music",
     features: [
-      "Go live with full audio streaming via Livepeer",
+      "Go live with full audio streaming via Mux",
       "Save and replay streams (public / followers / private)",
       "Earn coins from fan tips — 70% goes to you",
       "Withdraw earnings via PayPal or bank transfer",

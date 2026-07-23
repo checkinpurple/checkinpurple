@@ -21,6 +21,6 @@ export type DatabaseStream = {
   listener_count: number;
   started_at: string;
   ended_at?: string;
-  livepeer_stream_id?: string;
-  livepeer_playback_id?: string;
+  mux_stream_id?: string;
+  mux_playback_id?: string;
 };

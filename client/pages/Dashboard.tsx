@@ -88,7 +88,7 @@ export default function Dashboard({ viewAs }: { viewAs?: ProfileType } = {}) {
 
   const isAdmin = user.role === "admin";
   const isArtist = displayProfile === "artist" || displayProfile === "artist_fan";
-  const isFan = true;
+  const isFan = displayProfile === "fan" || displayProfile === "artist_fan";
   const isInfluencer = displayProfile === "influencer";
   const isMerchant = displayProfile === "merchant";
 
@@ -179,7 +179,7 @@ export default function Dashboard({ viewAs }: { viewAs?: ProfileType } = {}) {
             bio={profileData.bio}
             location={profileData.location}
             website={profileData.website}
-            role={user.role}
+            role={displayProfile}
             isVerified={user.is_verified}
             followerCount={followerCount}
             followingCount={followingCount}

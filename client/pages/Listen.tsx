@@ -71,7 +71,7 @@ export default function Listen() {
       audio.load();
       return;
     }
-    audio.src = `https://livepeercdn.studio/hls/${selectedStream.playbackId}/index.m3u8`;
+    audio.src = `https://stream.mux.com/${selectedStream.playbackId}.m3u8`;
     audio.load();
     if (isPlaying) audio.play().catch(console.error);
   }, [selectedStream]);

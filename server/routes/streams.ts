@@ -20,7 +20,7 @@ export const createStream: RequestHandler = async (req, res) => {
       status: 'live' as const,
       listener_count: 0,
       started_at: new Date().toISOString(),
-      livepeer_stream_id: req.body.livepeerStreamId || null,
+      livepeer_stream_id: req.body.muxStreamId || null,
       livepeer_playback_id: req.body.playbackId || null,
     };
 
@@ -49,8 +49,9 @@ export const createStream: RequestHandler = async (req, res) => {
       stream: {
         id: data.id,
         title: data.title,
-        livepeerStreamId: data.livepeer_stream_id,
+        muxStreamId: data.livepeer_stream_id,
         playbackId: data.livepeer_playback_id,
+        playbackUrl: data.livepeer_playback_id ? `https://stream.mux.com/${data.livepeer_playback_id}.m3u8` : null,
       },
     });
   } catch (error) {
@@ -75,7 +76,7 @@ export const getStream: RequestHandler = async (req, res) => {
     const { streamId } = req.params;
     const { data, error } = await supabase.from('streams').select('*').eq('id', streamId).single();
     if (error || !data) return res.status(404).json({ error: "Stream not found" });
-    res.json({ success: true, stream: { id: data.id, title: data.title, livepeerStreamId: data.livepeer_stream_id, playbackId: data.livepeer_playback_id, listenerCount: data.listener_count, startedAt: data.started_at } });
+    res.json({ success: true, stream: { id: data.id, title: data.title, muxStreamId: data.livepeer_stream_id, playbackId: data.livepeer_playback_id, playbackUrl: data.livepeer_playback_id ? `https://stream.mux.com/${data.livepeer_playback_id}.m3u8` : null, listenerCount: data.listener_count, startedAt: data.started_at } });
   } catch { res.status(500).json({ error: "Failed to fetch stream" }); }
 };
 
@@ -114,6 +115,7 @@ export const listActiveStreams: RequestHandler = async (_req, res) => {
           listenerCount: stream.listener_count,
           startedAt: stream.started_at,
           playbackId: stream.livepeer_playback_id,
+          playbackUrl: stream.livepeer_playback_id ? `https://stream.mux.com/${stream.livepeer_playback_id}.m3u8` : null,
           username: artist?.username,
           avatar_url: artist?.avatar_url,
         };
